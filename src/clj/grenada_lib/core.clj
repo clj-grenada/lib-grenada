@@ -2,7 +2,7 @@
   (:require [clojure.java.io :as io]
             [medley.core :refer [dissoc-in]]
             [clojure.tools.namespace.find :as tns.find]
-            [darkestperu.jar :as darkestperu]
+            [darkestperu.jar :as jar]
             [leiningen.pom :as pom]))
 
 (def metadata-dirnm "grenada-data")
@@ -65,25 +65,25 @@
     data-path))
 
 (defn jar-from-project
-  "<yet to fill in>
+  "<yet to be filled in>
 
   tools.namespace supports only one namespace per file. We inherit this
   limitation."
   [{artifact :name :keys [group version root] :as project}]
   (let [out-dir  (io/file root "target" "grenada")
         jar-path (io/file out-dir (str artifact "-" version "-metadata.jar"))
+        pom-path (io/file out-dir "pom.xml")
+        pom-in-jar (io/file "META-INF" "maven" group artifact "pom.xml")
         files
-        (->> (find-entities-clj ".")
+        (->> (find-entities-clj root)
              (map merge-in-meta)
              (map remove-unreadable)
              (map #(complete-coords % project))
              (map #(write-data % root))
-             doall)]
+             doall)
+        files-map (into {} (map (fn [p] [p (jar/relativize-path root p)])
+                                files))]
     (ensure-exists out-dir)
-    (darkestperu/make-jar jar-path
-                          {:manifest-version "1.0"}
-                          files
-                          root
-                          {(str (io/file "META-INF" "maven"
-                                         group artifact "pom.xml"))
-                           (pom/make-pom project)})))
+    (spit pom-path (pom/make-pom project))
+    (jar/make-jar jar-path {:manifest-version "1.0"}
+                  (conj files-map [pom-path pom-in-jar]))))
