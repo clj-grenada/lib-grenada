@@ -39,11 +39,6 @@
     (assoc data :cmeta cmeta)
     data))
 
-(defn remove-unreadable [ent-data]
-  (reduce #(dissoc-in %1 [:cmeta %2])
-          ent-data
-          [:ns :test]))
-
 (defn complete-coords
   [{:keys [coords-suffix] :as ent-data} {artifact :name :keys [group version]}]
   (-> ent-data
@@ -61,7 +56,8 @@
   (let [data-dir (io/file root metadata-dirnm (coords->path (:coords data)))
         data-path (io/file data-dir data-fnm)]
     (ensure-exists data-dir)
-    (spit data-path data)
+    (with-open [writer (io/writer data-path)]
+      (binding [*out* writer] (prn data)))
     data-path))
 
 (defn jar-from-project
@@ -77,7 +73,6 @@
         files
         (->> (find-entities-clj root)
              (map merge-in-meta)
-             (map remove-unreadable)
              (map #(complete-coords % project))
              (map #(write-data % root))
              doall)
