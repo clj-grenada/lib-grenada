@@ -61,24 +61,31 @@
     data-path))
 
 (defn jar-from-project
-  "<yet to be filled in>
+  "Scans the namespaces and vars from the project identified by PROJECT-IN (cf.
+  Leiningen docs on 'project') and writes their Cmetadata to a
+  directory-and-file structure. Packages these data into a JAR and writes a
+  pom.xml. The package will have the Maven coordinates from COORDS-OUT.
 
-  tools.namespace supports only one namespace per file. We inherit this
-  limitation."
-  [{artifact :name :keys [group version root] :as project}]
+  Note: tools.namespace supports only one namespace per file. We inherit this
+  limitation. This means, if you have a file that defines more than one
+  namespace, jar-from-project will only be able to extract the first. In future
+  versions of this library, you will be able to plug in your own namespace
+  scanner, in order to overcome this."
+  [{artifact-i :name group-i :group version-i :version root :root :as project-in}
+   {artifact-o :name group-o :group version-o :version :as coords-out}]
   (let [out-dir  (io/file root "target" "grenada")
-        jar-path (io/file out-dir (str artifact "-" version "-metadata.jar"))
+        jar-path (io/file out-dir (str artifact-o "-" version-o "-metadata.jar"))
         pom-path (io/file out-dir "pom.xml")
-        pom-in-jar (io/file "META-INF" "maven" group artifact "pom.xml")
+        pom-in-jar (io/file "META-INF" "maven" group-o artifact-o "pom.xml")
         files
         (->> (find-entities-clj root)
              (map merge-in-meta)
-             (map #(complete-coords % project))
+             (map #(complete-coords % project-in))
              (map #(write-data % root))
              doall)
         files-map (into {} (map (fn [p] [p (jar/relativize-path root p)])
                                 files))]
     (ensure-exists out-dir)
-    (spit pom-path (pom/make-pom project))
+    (spit pom-path (pom/make-pom coords-out))
     (jar/make-jar jar-path {:manifest-version "1.0"}
                   (conj files-map [pom-path pom-in-jar]))))
