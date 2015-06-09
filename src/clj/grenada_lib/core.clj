@@ -57,13 +57,19 @@
       (dissoc :coords-suffix)
       (assoc :coords (into [group artifact version] coords-suffix))))
 
+(defmacro fnk* [symv form]
+  `(plumbing.core/fnk [~@symv]
+                      ~(if (list? form)
+                         `(~@form ~@symv)
+                         `(~form ~@symv))))
+
 (def clj-entity-src-graph
-  {:nssyms (fnk [dir-path] (clj-namespace-src dir-path))
-   :nsmaps (fnk [nssyms] (map nssym->nsmap nssyms))
-   :deftups (fnk [nssyms] (mapcat nssym->deftups nssyms))
-   :defmaps (fnk [deftups] (map deftup->defmap deftups))
-   :bare-ents (fnk [nsmaps defmaps] (concat nsmaps defmaps))
-   :ents-with-meta (fnk [bare-ents] (map merge-in-meta bare-ents))
+  {:nssyms (fnk* [dir-path] clj-namespace-src)
+   :nsmaps (fnk* [nssyms] (map nssym->nsmap))
+   :deftups (fnk* [nssyms] (mapcat nssym->deftups))
+   :defmaps (fnk* [deftups] (map deftup->defmap))
+   :bare-ents (fnk* [nsmaps defmaps] concat)
+   :ents-with-meta (fnk* [bare-ents] (map merge-in-meta))
    :entity-maps (fnk [ents-with-meta artifact-coords]
                      (map #(complete-coords % artifact-coords)
                           ents-with-meta))})
