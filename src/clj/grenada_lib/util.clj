@@ -4,6 +4,9 @@
             clojure.core.contracts
             trammel.provide))
 
+(defn warn [& args]
+  (binding [*out* *err*] (apply println "WARNING! "args)))
+
 (defmacro fnk*
   "Shortens fnks that just apply some other function to their arguments.
 

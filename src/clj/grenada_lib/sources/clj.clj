@@ -1,12 +1,23 @@
 (ns grenada-lib.sources.clj
   "Procedures for extracting metadata from .clj files."
   (:require [clojure.java.io :as io]
-            [grenada-lib.util :refer [fnk* defconstrainedfn*]]
+            [clojure.string :as string]
+            [grenada-lib.util :as gr-util :refer [fnk* defconstrainedfn*]]
             [grenada-lib.sources.contracts :as grc]
             [medley.core :refer [dissoc-in]]
             [clojure.tools.namespace.find :as tns.find]
+            [schema.core :as s]
+            [clojure.pprint :refer [pprint]]
             [plumbing.core :as plumbing :refer [fnk]]
-            [plumbing.graph :as graph]))
+            [plumbing.graph :as graph])
+  (:import java.util.regex.Pattern
+           java.util.jar.JarFile
+           org.reflections.util.ClasspathHelper))
+
+(def LeinDepSpec
+  (s/either [(s/one s/Symbol "group-artifact") (s/one s/Str "version")]
+            [(s/one s/Symbol "group-artifact") (s/one s/Str "version")
+             (s/one (s/eq :classifier) "cl-key") (s/one s/Str "classifier")]))
 
 ;;; Notes:
 ;;;
@@ -26,7 +37,7 @@
 ;;;    replacement requirements.
 
 ;; TODO: Limit to .clj files. .cljc files have to be treated separately.
-(defconstrainedfn* clj-nssym-src [grc/takes-dir grc/nssym-src]
+(defconstrainedfn* clj-dir-nssym-src [grc/takes-dir grc/nssym-src]
   "Returns a sequence of symbols naming namespaces defined in .clj files below
   DIR-PATH.
 
@@ -40,6 +51,9 @@
   Replacement requirements: see grc/nssym-src"
   [dir-path]
   (tns.find/find-namespaces-in-dir (io/as-file dir-path)))
+
+(defn clj-jar-nssym-src [jar-file]
+  (tns.find/find-namespaces-in-jarfile jar-file))
 
 (defconstrainedfn* nssym->nsmap [grc/takes-sym grc/returns-nsmap]
   "Returns a partial metadata map for the namespace denoted by S.
@@ -118,9 +132,40 @@
       (dissoc :coords-suffix)
       (assoc :coords (into [group artifact version] coords-suffix))))
 
+(s/defn spec->artifact-coords [spec :- LeinDepSpec]
+  (let [[group-artifact version & _] spec
+        artifact (name group-artifact)
+        group (or (namespace group-artifact) artifact)]
+    {:group group
+     :artifact artifact
+     :version version}))
+
+(s/defn spec->relpath [spec :- LeinDepSpec]
+  (let [[_ _ _ ?classifier] spec
+        {:keys [artifact group version]} (spec->artifact-coords spec)
+        classifier (if ?classifier (str "-" ?classifier) "")
+        jar-name (str artifact "-" version classifier ".jar")]
+    (io/file group artifact version jar-name)))
+
+;; TODO: Warning or exception when there is more than one file.
+(s/defn find-in-classpath [spec :- LeinDepSpec]
+  (let [jar-path-re (-> spec
+                        spec->relpath
+                        str
+                        Pattern/quote
+                        re-pattern)
+        files (->> [(ClasspathHelper/contextClassLoader)]
+                   (into-array ClassLoader)
+                   ClasspathHelper/forClassLoader
+                   (filter #(re-find jar-path-re (str %))))]
+    (when (> 1 (count files))
+      (gr-util/warn "More than one file conforming to" spec "on classpath."
+                    "Either you have a weird classpath or the author of Grenada
+                     has overlooked something."))
+    (io/as-file (first files))))
+
 (def clj-entity-src-graph
-  {:nssyms         (fnk* [dir-path] clj-nssym-src)
-   :nsmaps         (fnk* [nssyms] (map nssym->nsmap))
+  {:nsmaps         (fnk* [nssyms] (map nssym->nsmap))
    :deftups        (fnk* [nssyms] (mapcat nssym->deftups))
    :defmaps        (fnk* [deftups] (map deftup->defmap))
    :bare-ents      (fnk* [nsmaps defmaps] concat)
@@ -129,7 +174,20 @@
                   (map #(complete-coords % artifact-coords)
                        ents-with-meta))})
 
-(defn clj-entity-src [dir-path artifact-coords]
+(defn dir-entity-src [dir-path artifact-coords]
   (-> ((graph/eager-compile clj-entity-src-graph)
-       {:dir-path dir-path, :artifact-coords artifact-coords})
+       {:dir-path dir-path
+        :artifact-coords artifact-coords
+        :nssyms         (fnk* [dir-path] clj-dir-nssym-src)})
       :entity-maps))
+
+(s/defn ^:always-validate jar-entity-src [spec :- LeinDepSpec]
+  (if-let [jar-file-file (find-in-classpath spec)]
+    (-> ((graph/eager-compile (assoc clj-entity-src-graph
+                                     :nssyms
+                                     (fnk* [jar-file] clj-jar-nssym-src)))
+         {:jar-file (JarFile. jar-file-file)
+          :artifact-coords (spec->artifact-coords spec)})
+        :entity-maps)
+    (throw (IllegalArgumentException. (str "No JAR conforming to " spec
+                                           " found on classpath.")))))

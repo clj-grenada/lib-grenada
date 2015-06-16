@@ -40,8 +40,9 @@
   (let [jar-path (io/file out-dir (out-jar coords-out))
         pom-path (io/file out-dir "pom.xml")
         pom-in-jar (io/file "META-INF" "maven" group artifact "pom.xml")
-        in-dir-parent (.getParentFile in-dir)
-        files (ord-file-seq in-dir)
+        in-dir-file (io/as-file in-dir)
+        in-dir-parent (.getParentFile in-dir-file)
+        files (ord-file-seq in-dir-file)
         files-map (into {} (map (fn [p]
                                   [p (jar/relativize-path in-dir-parent p)])
                                 files))]
