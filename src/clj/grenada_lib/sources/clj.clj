@@ -9,15 +9,130 @@
             [schema.core :as s]
             [clojure.pprint :refer [pprint]]
             [plumbing.core :as plumbing :refer [fnk]]
-            [plumbing.graph :as graph])
-  (:import java.util.regex.Pattern
+            [plumbing.graph :as graph]
+            [cemerick.pomegranate.aether :as aether])
+  (:import java.io.File
+           java.util.regex.Pattern
            java.util.jar.JarFile
+           [java.net URL URLClassLoader]
            org.reflections.util.ClasspathHelper))
 
 (def LeinDepSpec
   (s/either [(s/one s/Symbol "group-artifact") (s/one s/Str "version")]
             [(s/one s/Symbol "group-artifact") (s/one s/Str "version")
              (s/one (s/eq :classifier) "cl-key") (s/one s/Str "classifier")]))
+
+;;; TODO: Make the following defs configurable.
+
+;; Credits: https://github.com/boot-clj/boot/blob/c244cc6cffea48ce2912706567b3bc41a4d387c7/boot/aether/src/boot/aether.clj
+(def default-repositories {"clojars"       "https://clojars.org/repo/"
+                           "maven-central" "https://repo1.maven.org/maven2/"})
+
+(def shimdandy-v "1.1.0")
+
+(s/defn resolve-spec [dep-spec :- LeinDepSpec]
+  (let [files (aether/dependency-files
+                (aether/resolve-dependencies
+                  :coordinates [dep-spec]
+                  :repositories default-repositories))]
+    (when (zero? (count files))
+      (throw (IllegalArgumentException. (str "Couldn't resolve dependency"
+                                             dep-spec))))
+    files))
+
+(defn create-file-seq [where-to-look]
+  (cond
+    (and (sequential? where-to-look)
+         (instance? java.io.File (first where-to-look)))
+    where-to-look
+
+    (and (vector? where-to-look) (symbol? (first where-to-look)))
+    (resolve-spec (s/validate LeinDepSpec where-to-look))
+
+    (instance? java.io.File where-to-look)
+    [where-to-look]
+
+    :default
+    (throw (IllegalArgumentException.
+             (str where-to-look " is not a valid thing to search for entities."
+                  " Maybe you forgot to wrap it in a File?")))))
+
+
+;; TODO: Provide a slot for some little extractor library. Of course it can be
+;; included in the files, but it would be better to make it official and warn
+;; people not to introduce dependencies that would scramble up everything.
+;;
+;; About the implementation:
+;;
+;; The SystemClassLoader is able to load anything from the classpath and will do
+;; so if you ask it. We don't want do have any other files than those specified
+;; in our Clojure runtime, since that might result in the wrong files being
+;; scraped. Thus, when constructing the URLClassLoader, we can't let it use the
+;; default parent, since that would most likely be the SystemClassLoader.
+;; Therefore we use the parent of the SystemClassLoader, which doesn't load
+;; anything from the classpath.
+;;
+;; Now, however, we can't just :import
+;; org.projectodd.shimdandy.ClojureRuntimeShim and use
+;; ClojureRuntimeShim/newRuntime. It would be loaded with Clojure's
+;; ContextClassLoader and internally load ClojureRuntimeShimImpl loaded by our
+;; custom URLClassLoader and try to upcast that to ClojureRuntimeShim. That
+;; wouldn't work, because ClojureRuntimeShim and ClojureRuntimeShimImpl would
+;; have been loaded by different classloaders. Cross-ClassLoader casting is not
+;; possible. Therefore we use our custom URLClassLoader to load both
+;; ClojureRuntimeShim and ClojureRuntimeShimImpl, which is why we have to do
+;; some reflection stuff.
+(s/defn get-extraction-shim
+  "Creates a new Clojure runtime with only the Clojure according to CLJ-DEPSPEC
+  and the FILES loaded."
+  [clj-depspec :- LeinDepSpec files]
+  (let [clojure-jar (resolve-spec clj-depspec)
+        shim-impl-jar (resolve-spec
+                        ['org.projectodd.shimdandy/shimdandy-impl shimdandy-v])
+        shim-api-jar (resolve-spec
+                       ['org.projectodd.shimdandy/shimdandy-api shimdandy-v])
+
+        class-ldr
+        (URLClassLoader.
+          (into-array URL (map io/as-url
+                               (concat shim-api-jar
+                                       shim-impl-jar
+                                       clojure-jar
+                                       files)))
+          (.getParent (ClassLoader/getSystemClassLoader)))
+
+        runtime-shim-class
+        (.loadClass class-ldr "org.projectodd.shimdandy.ClojureRuntimeShim")
+
+        new-runtime-method
+        (.getMethod runtime-shim-class
+                    "newRuntime"
+                    (into-array Class [ClassLoader String]))]
+    (.invoke new-runtime-method
+             nil (object-array [class-ldr "Grenada capturing"]))))
+
+; - We might get a JAR file, a directory, a .clj file, a .cljc file, a dependency
+;   spec.
+; - For everything but the dependency spec we can create a file-seq and run
+;   tns.find/find-namespaces on it.
+; - For the dependency spec we have resolve-dependencies (Pomegranate) it first
+;   and get the files and then we can run tffn.
+; - Then we have the namespaces.
+; - The files from before we place in the :source-paths of the Boot environment.
+; - We place the specified Clojure version in :dependencies of the Boot
+;   environment.
+; - We then start the Pod, require the namespaces one by one and run a bit of
+;   code in the pod that captures the necessary metadata and remove-ns the
+;   namespace again and return the metadata.
+; - Okay, now
+(s/defn ^:always-validate entity-src [clj-depspec :- LeinDepSpec where-to-look]
+  (let [files (create-file-seq where-to-look)
+        nss (tns.find/find-namespaces files)
+        runtime (get-extraction-shim clj-depspec files)]
+    (.require runtime (into-array String ["clojure.core" "schema.core"]))
+    (let [symb (.invoke runtime "clojure.core/symbol" "schema.core")
+          namesp (.invoke runtime "clojure.core/find-ns" symb)]
+      (.invoke runtime "clojure.core/meta" namesp))))
 
 ;;; Notes:
 ;;;
