@@ -8,7 +8,7 @@
             [clojure.tools.namespace.find :as tns.find]
             [schema.core :as s]
             [clojure.pprint :refer [pprint]]
-            [plumbing.core :as plumbing :refer [fnk]]
+            [plumbing.core :as plumbing :refer [fnk safe-get]]
             [plumbing.graph :as graph]
             [cemerick.pomegranate.aether :as aether])
   (:import java.io.File
@@ -111,6 +111,90 @@
     (.invoke new-runtime-method
              nil (object-array [class-ldr "Grenada capturing"]))))
 
+(defn string-array [& args]
+  (into-array String args))
+
+(defn symbol-in-rt [rt sym]
+  (.invoke rt "clojure.core/symbol" (str sym)))
+
+(defn find-ns-in-rt
+  "
+  Necessary because symbols from here can't be used in the other runtime or
+  something."
+  [rt nssym]
+  (->> nssym
+       (symbol-in-rt rt)
+       (.invoke rt "clojure.core/find-ns")))
+
+(defn ns-resolve-in-rt [rt rt-ns defsym]
+  (->> defsym
+       (symbol-in-rt rt)
+       (.invoke rt "clojure.core/ns-resolve" rt-ns)))
+
+;; - Doing the namespace removing for true order-independence. – I don't know
+;;   if it's necessary, though.
+(defn get-meta-in-runtime
+  "Expects the namespace denoted by NSSYM to be loaded in RT."
+  [rt nssym]
+  (.invoke rt "clojure.core/meta" (find-ns-in-rt rt nssym)))
+
+(defconstrainedfn* nssym->nsmap [grc/takes-sym grc/returns-nsmap]
+  "Returns a partial metadata map for the namespace denoted by S.
+
+  See the code for what this means.
+
+  Class: transformer, non-standard
+
+  Replacement: probably not necessary"
+  [s]
+  {:name (name s)
+   :level :grimoire.things/namespace
+   :coords-suffix ["clj" (name s)]})
+
+(defn nssym->deftups-in-rt
+  "
+  Deftups are easier to destructure than namespace-qualified symbols."
+  [rt]
+  (fn [nssym]
+    (->> nssym
+         (find-ns-in-rt rt)
+         (.invoke rt "clojure.core/ns-interns")
+         keys
+         (map (fn [s] [nssym s])))))
+
+(defconstrainedfn* deftup->defmap [grc/takes-symtup grc/returns-defmap]
+  "Returns a partial metadata map for the def identified by [NSSYM DEFSYM].
+
+  Class: transformer, non-standard
+
+  Replacement: probably not necessary"
+  [[nssym defsym]]
+  {:name (name defsym)
+   :level :grimoire.things/def
+   :coords-suffix ["clj" (name nssym) (name defsym)]})
+
+(defn merge-in-ns-meta-in-rt [rt]
+  (fn [{[_ nsp-name] :coords-suffix :as data}]
+    (->> nsp-name
+         symbol
+         (find-ns-in-rt rt)
+         (.invoke rt "clojure.core/meta")
+         (plumbing/assoc-when data :cmeta))))
+
+(defn merge-in-def-meta-in-rt [rt]
+  (fn [{[_ nsp-name def-name] :coords-suffix :as data}]
+    (->> def-name
+         symbol
+         (ns-resolve-in-rt rt (find-ns-in-rt rt (symbol nsp-name)))
+         (.invoke rt "clojure.core/meta")
+         (plumbing/assoc-when data :cmeta))))
+
+(defn complete-coords
+  [{:keys [coords-suffix] :as ent-data} {artifact :name :keys [group version]}]
+  (-> ent-data
+      (dissoc :coords-suffix)
+      (assoc :coords (into [group artifact version] coords-suffix))))
+
 ; - We might get a JAR file, a directory, a .clj file, a .cljc file, a dependency
 ;   spec.
 ; - For everything but the dependency spec we can create a file-seq and run
@@ -125,14 +209,67 @@
 ;   code in the pod that captures the necessary metadata and remove-ns the
 ;   namespace again and return the metadata.
 ; - Okay, now
-(s/defn ^:always-validate entity-src [clj-depspec :- LeinDepSpec where-to-look]
+
+;; - Sort namespace symbols so that the order of loading becomes deterministic.
+(s/defn ^:always-validate other-old-entity-src [clj-depspec :- LeinDepSpec where-to-look]
   (let [files (create-file-seq where-to-look)
-        nss (tns.find/find-namespaces files)
-        runtime (get-extraction-shim clj-depspec files)]
-    (.require runtime (into-array String ["clojure.core" "schema.core"]))
-    (let [symb (.invoke runtime "clojure.core/symbol" "schema.core")
-          namesp (.invoke runtime "clojure.core/find-ns" symb)]
-      (.invoke runtime "clojure.core/meta" namesp))))
+        nss (sort (tns.find/find-namespaces files))
+        _ (println nss)
+        runtime (get-extraction-shim clj-depspec files)
+        _ (.require runtime (string-array "clojure.core"))
+        _ (.require runtime (apply string-array (map str nss)))
+        ns-metas (map #(get-meta-in-runtime runtime %) nss)]
+    ns-metas))
+
+;; Input nodes: :where-to-look :clj-depspec :artifact-coords
+(def clj-entity-src-graph
+  {:files
+   (fnk* [where-to-look] create-file-seq)
+
+   :nssyms
+   (fnk [files] (sort (tns.find/find-namespaces files)))
+
+   :bare-runtime
+   (fnk* [clj-depspec files] get-extraction-shim)
+
+   :runtime
+   (fnk [bare-runtime nssyms]
+     (.require bare-runtime (string-array "clojure.core"))
+     (.require bare-runtime (apply string-array (map str nssyms)))
+     bare-runtime)
+
+   :nsmaps
+   (fnk* [nssyms] (map nssym->nsmap))
+
+   :deftups
+   (fnk [runtime nssyms] (mapcat (nssym->deftups-in-rt runtime)
+                                 nssyms))
+
+   :defmaps
+   (fnk* [deftups] (map deftup->defmap))
+
+   :nsmaps-with-meta
+   (fnk [runtime nsmaps] (map (merge-in-ns-meta-in-rt runtime)
+                              nsmaps))
+
+   :defmaps-with-meta
+   (fnk [runtime defmaps]
+     (map (merge-in-def-meta-in-rt runtime)
+          defmaps))
+
+   :ents-with-meta
+   (fnk* [nsmaps-with-meta defmaps-with-meta] concat)
+
+   :entity-maps
+   (fnk [ents-with-meta artifact-coords]
+     (map #(complete-coords % artifact-coords) ents-with-meta))})
+
+(s/defn ^:always-validate clj-entity-src
+  [clj-depspec :- LeinDepSpec where-to-look artifact-coords]
+  ((graph/lazy-compile clj-entity-src-graph)
+             {:clj-depspec clj-depspec
+              :where-to-look where-to-look
+              :artifact-coords artifact-coords}))
 
 ;;; Notes:
 ;;;
@@ -170,19 +307,6 @@
 (defn clj-jar-nssym-src [jar-file]
   (tns.find/find-namespaces-in-jarfile jar-file))
 
-(defconstrainedfn* nssym->nsmap [grc/takes-sym grc/returns-nsmap]
-  "Returns a partial metadata map for the namespace denoted by S.
-
-  See the code for what this means.
-
-  Class: transformer, non-standard
-
-  Replacement: probably not necessary"
-  [s]
-  {:name (name s)
-   :level :grimoire.things/namespace
-   :coords-suffix ["clj" (name s)]})
-
 (defconstrainedfn* nssym->deftups [grc/takes-nssym grc/deftup-src]
   "Returns a tuple [NSSYM sym] for each def in the namespace denoted by NSSYM
   where sym is the symbol referring to the def.
@@ -196,17 +320,6 @@
        ns-interns
        keys
        (map (fn [s] [nssym s]))))
-
-(defconstrainedfn* deftup->defmap [grc/takes-symtup grc/returns-defmap]
-  "Returns a partial metadata map for the def identified by [NSSYM DEFSYM].
-
-  Class: transformer, non-standard
-
-  Replacement: probably not necessary"
-  [[nssym defsym]]
-  {:name (name defsym)
-   :level :grimoire.things/def
-   :coords-suffix ["clj" (name nssym) (name defsym)]})
 
 ;; TODO: Handle defs that are not vars or correct constraints.
 (defmulti merge-in-meta
@@ -241,12 +354,6 @@
   [merge-in-meta "" grc/takes-defmap-or-nsmap-or-othermap]
   [merge-in-meta "" grc/returns-mdmap])
 
-(defn complete-coords
-  [{:keys [coords-suffix] :as ent-data} {artifact :name :keys [group version]}]
-  (-> ent-data
-      (dissoc :coords-suffix)
-      (assoc :coords (into [group artifact version] coords-suffix))))
-
 (s/defn spec->artifact-coords [spec :- LeinDepSpec]
   (let [[group-artifact version & _] spec
         artifact (name group-artifact)
@@ -279,7 +386,7 @@
                      has overlooked something."))
     (io/as-file (first files))))
 
-(def clj-entity-src-graph
+(def old-clj-entity-src-graph
   {:nsmaps         (fnk* [nssyms] (map nssym->nsmap))
    :deftups        (fnk* [nssyms] (mapcat nssym->deftups))
    :defmaps        (fnk* [deftups] (map deftup->defmap))
