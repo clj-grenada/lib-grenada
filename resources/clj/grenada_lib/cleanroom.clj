@@ -13,7 +13,7 @@
 (defmethod print-method clojure.lang.Var [v, ^Writer w]
   (let [var-name (get (meta v) :name "")
         namesp-name (str (get (meta v) :ns ""))]
-   (.write w (str "#grenada/var \"" "Dude!" namesp-name "/" var-name "\""))))
+   (.write w (str "#grenada/var \"" namesp-name "/" var-name "\""))))
 
 ;; TODO: Implement eliminating things that would be written with #< by doing
 ;; something similar to what Letterpress does
