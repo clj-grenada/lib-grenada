@@ -1,10 +1,10 @@
 (ns grenada-lib.sources.clj
-  "Procedures for extracting metadata from .clj files."
+  "Procedures for extracting metadata from Clojure source trees and JAR files."
   (:require [clojure.java.io :as io]
-            [clojure.edn :as edn]
             [clojure.string :as string]
             [grenada-lib.util :as gr-util :refer [fnk* defconstrainedfn*]]
             [grenada-lib.sources.contracts :as grc]
+            [grenada-lib.reading :as reading]
             [medley.core :refer [dissoc-in]]
             [clojure.tools.namespace.find :as tns.find]
             [schema.core :as s]
@@ -18,18 +18,34 @@
            [java.net URL URLClassLoader]
            org.reflections.util.ClasspathHelper))
 
-(def LeinDepSpec
-  (s/either [(s/one s/Symbol "group-artifact") (s/one s/Str "version")]
-            [(s/one s/Symbol "group-artifact") (s/one s/Str "version")
-             (s/one (s/eq :classifier) "cl-key") (s/one s/Str "classifier")]))
+;;; TODO: The whole thing with the separate runtime made it a lot more difficult
+;;;       for people to write .clj extractors. Think about how either to make
+;;;       the stuff in this namespace extensible or to provide an API that makes
+;;;       writing new extractors reasonably easy. (RM 2015-06-19)
 
-;;; TODO: Make the following defs configurable.
+;;;; Global config
+
+;;; TODO: Make the following defs configurable. (RM 2015-06-19)
 
 ;; Credits: https://github.com/boot-clj/boot/blob/c244cc6cffea48ce2912706567b3bc41a4d387c7/boot/aether/src/boot/aether.clj
 (def default-repositories {"clojars"       "https://clojars.org/repo/"
                            "maven-central" "https://repo1.maven.org/maven2/"})
 
 (def shimdandy-v "1.1.0")
+
+
+;;;; Schemas
+
+(def LeinDepSpec
+  (s/either [(s/one s/Symbol "group-artifact") (s/one s/Str "version")]
+            [(s/one s/Symbol "group-artifact") (s/one s/Str "version")
+             (s/one (s/eq :classifier) "cl-key") (s/one s/Str "classifier")]))
+
+
+;;;; Helpers
+
+(defn string-array [& args]
+  (into-array String args))
 
 (s/defn resolve-spec [dep-spec :- LeinDepSpec]
   (let [files (aether/dependency-files
@@ -58,10 +74,6 @@
              (str where-to-look " is not a valid thing to search for entities."
                   " Maybe you forgot to wrap it in a File?")))))
 
-;; TODO: Provide a slot for some little extractor library. Of course it can be
-;; included in the files, but it would be better to make it official and warn
-;; people not to introduce dependencies that would scramble up everything.
-;;
 ;; About the implementation:
 ;;
 ;; The SystemClassLoader is able to load anything from the classpath and will do
@@ -82,6 +94,11 @@
 ;; possible. Therefore we use our custom URLClassLoader to load both
 ;; ClojureRuntimeShim and ClojureRuntimeShimImpl, which is why we have to do
 ;; some reflection stuff.
+;;
+;; TODO: Provide a slot for some little extractor library. Of course it can be
+;;       included in the files, but it would be better to make it official and
+;;       warn people not to introduce dependencies that would scramble up
+;;       everything. (RM 2015-06-19)
 (s/defn get-extraction-shim
   "Creates a new Clojure runtime with only the Clojure according to CLJ-DEPSPEC
   and the FILES loaded."
@@ -113,32 +130,8 @@
     (.invoke new-runtime-method
              nil (object-array [class-ldr "Grenada capturing"]))))
 
-(defn string-array [& args]
-  (into-array String args))
 
-(defn symbol-in-rt [rt sym]
-  (.invoke rt "clojure.core/symbol" (str sym)))
-
-(defn find-ns-in-rt
-  "
-  Necessary because symbols from here can't be used in the other runtime or
-  something."
-  [rt nssym]
-  (->> nssym
-       (symbol-in-rt rt)
-       (.invoke rt "clojure.core/find-ns")))
-
-(defn ns-resolve-in-rt [rt rt-ns defsym]
-  (->> defsym
-       (symbol-in-rt rt)
-       (.invoke rt "clojure.core/ns-resolve" rt-ns)))
-
-;; - Doing the namespace removing for true order-independence. – I don't know
-;;   if it's necessary, though.
-(defn get-meta-in-runtime
-  "Expects the namespace denoted by NSSYM to be loaded in RT."
-  [rt nssym]
-  (.invoke rt "clojure.core/meta" (find-ns-in-rt rt nssym)))
+;;;; Non-standard transformers that don't require a separate runtime
 
 (defconstrainedfn* nssym->nsmap [grc/takes-sym grc/returns-nsmap]
   "Returns a partial metadata map for the namespace denoted by S.
@@ -153,17 +146,6 @@
    :level :grimoire.things/namespace
    :coords-suffix ["clj" (name s)]})
 
-(defn nssym->deftups-in-rt
-  "
-  Deftups are easier to destructure than namespace-qualified symbols."
-  [rt]
-  (fn [nssym]
-    (->> nssym
-         str
-         (.invoke rt "grenada-lib.cleanroom/ns-interns-strs")
-         (map symbol)
-         (map (fn [s] [nssym s])))))
-
 (defconstrainedfn* deftup->defmap [grc/takes-symtup grc/returns-defmap]
   "Returns a partial metadata map for the def identified by [NSSYM DEFSYM].
 
@@ -175,11 +157,31 @@
    :level :grimoire.things/def
    :coords-suffix ["clj" (name nssym) (name defsym)]})
 
+(defn complete-coords
+  [{:keys [coords-suffix] :as ent-data} {artifact :name :keys [group version]}]
+  (-> ent-data
+      (dissoc :coords-suffix)
+      (assoc :coords (into [group artifact version] coords-suffix))))
+
+
+;;;; Non-standard transformers that require a separate runtime
+
+(defn nssym->deftups-in-rt
+  "
+  Deftups are easier to destructure than namespace-qualified symbols."
+  [rt]
+  (fn [nssym]
+    (->> nssym
+         str
+         (.invoke rt "grenada-lib.cleanroom/ns-interns-strs")
+         (map symbol)
+         (map (fn [s] [nssym s])))))
+
 (defn merge-in-ns-meta-in-rt [rt]
   (fn [{[_ nsp-name] :coords-suffix :as data}]
     (->> nsp-name
          (.invoke rt "grenada-lib.cleanroom/ns-meta")
-         (edn/read-string {:default (constantly :unknown-object-ignored)})
+         reading/read-string
          (plumbing/assoc-when data :cmeta))))
 
 (defn merge-in-def-meta-in-rt [rt]
@@ -187,48 +189,34 @@
     (->> (symbol nsp-name def-name)
          str
          (.invoke rt "grenada-lib.cleanroom/var-meta")
-         (edn/read-string {:default (constantly :unknown-object-ignored)})
+         reading/read-string
          (plumbing/assoc-when data :cmeta))))
 
-(defn complete-coords
-  [{:keys [coords-suffix] :as ent-data} {artifact :name :keys [group version]}]
-  (-> ent-data
-      (dissoc :coords-suffix)
-      (assoc :coords (into [group artifact version] coords-suffix))))
 
-; - We might get a JAR file, a directory, a .clj file, a .cljc file, a dependency
-;   spec.
-; - Files alone don't work with the URLClassLoader or require. Don't know what
-;   is the reason. You have to specify the directory that contains the
-;   directories according to the namespace. So, if you want to require namespace
-;   my.namespace somewhere, you can't just put /path/to/my/namespace.clj in the
-;   classloader. You have to put /path/to/. And the trailing slash is required.
-; - For everything but the dependency spec we can create a file-seq and run
-;   tns.find/find-namespaces on it.
-; - For the dependency spec we have resolve-dependencies (Pomegranate) it first
-;   and get the files and then we can run tffn.
-; - Then we have the namespaces.
-; - The files from before we place in the :source-paths of the Boot environment.
-; - We place the specified Clojure version in :dependencies of the Boot
-;   environment.
-; - We then start the Pod, require the namespaces one by one and run a bit of
-;   code in the pod that captures the necessary metadata and remove-ns the
-;   namespace again and return the metadata.
-; - Okay, now
+;;;; Public API
 
-;; - Sort namespace symbols so that the order of loading becomes deterministic.
-(s/defn ^:always-validate other-old-entity-src [clj-depspec :- LeinDepSpec where-to-look]
-  (let [files (create-file-seq where-to-look)
-        nss (sort (tns.find/find-namespaces files))
-        _ (println nss)
-        runtime (get-extraction-shim clj-depspec files)
-        _ (.require runtime (string-array "clojure.core"))
-        _ (.require runtime (apply string-array (map str nss)))
-        ns-metas (map #(get-meta-in-runtime runtime %) nss)]
-    ns-metas))
+;;; TODO: Add a convenience procedure for extracting metadata from
+;;;       clojure-*.jars. (RM 2015-06-19)
+;;; TODO: Add a convenience procedure that automatically fills in the
+;;;       :artifact-coords when given a depspec for :where-to-look. (RM
+;;;       2015-06-19)
+;;; TODO: Add another convenience procedure that automatically fills in the
+;;;       :artifact-coords when given a JAR file for :where-to-look. (RM
+;;;       2015-06-19)
 
-;; Input nodes: :where-to-look :clj-depspec :artifact-coords
 (def clj-entity-src-graph
+  "
+
+  You're not supposed to modify this graph, but inspecting it is okay.
+
+  We're using tools.namespace/find-namespaces for extracting namespace-naming
+  symbols from the files from :where-to-look. We load the namespaces into a
+  separate Clojure runtime. All namespaces will be loaded together. In order to
+  make the loading order deterministic, we sort the namespace-naming symbols
+  with clojure.core/sort before requiring them into the runtime one after the
+  other.
+
+  Input nodes: :where-to-look :clj-depspec :artifact-coords"
   {:files
    (fnk* [where-to-look] create-file-seq)
 
@@ -271,13 +259,44 @@
    (fnk [ents-with-meta artifact-coords]
      (map #(complete-coords % artifact-coords) ents-with-meta))})
 
+;; TODO: Check that the user didn't provide a *.clj File. (RM 2015-06-19)
 (s/defn ^:always-validate clj-entity-src
+  "
+
+  WHERE-TO-LOOK can either be a JAR File or a directory File. If it is a
+  directory, it has to be the root of the tree of Clojure files to scan. That
+  means, if you want to extract metadata from cool/namespace.clj, you can't just
+  provide /path/to/cool/namespace.clj. You have to provide /path/to/ (including
+  the trailing slash!), because otherwise Clojure won't be able to find the
+  file. Don't ask me why. If it is required that you only extract metadata from
+  that one namespace, send me a message and I will figure it out. Of course you
+  can modify the graph to include a filter, but then it's your responsibility,
+  not mine. I warned you.
+
+  READ THE FOLLOWING! or you're in for trouble.
+
+  If the artifact you want to extract metadata from is some version of Clojure
+  itself, you have to provide the same version of Clojure in CLJ-DEPSPEC.
+  Otherwise there is no guarantee that you will be extracting the right things.
+  Right now, we don't check if you obey this rule and it is detrimental to you
+  if you don't. So make extra sure you specified the right things.
+
+  Extracting metadata from versions of Clojure before 1.7.0-RC1 is not supported
+  yet."
   [clj-depspec :- LeinDepSpec where-to-look artifact-coords]
-  ((graph/lazy-compile clj-entity-src-graph)
+  (safe-get ((graph/eager-compile clj-entity-src-graph)
              {:clj-depspec clj-depspec
               :where-to-look where-to-look
-              :artifact-coords artifact-coords}))
+              :artifact-coords artifact-coords})
+            :entity-maps))
 
+
+;;;; Outdated comments
+
+;;; These notes have to do with the contracts and how to customize this entity
+;;; source in the proper way. I probably won't allow this flexibility, but for
+;;; now the contracts stuff is still in here, so I'll also leave the comments.
+;;;
 ;;; Notes:
 ;;;
 ;;;  - If I write, "see the code", I deem the code so straighforward that it
@@ -294,129 +313,3 @@
 ;;;    provide replacement requirements. If you find a case where you want to
 ;;;    replace the node after all, please contact me and I will provide
 ;;;    replacement requirements.
-
-;; TODO: Limit to .clj files. .cljc files have to be treated separately.
-(defconstrainedfn* clj-dir-nssym-src [grc/takes-dir grc/nssym-src]
-  "Returns a sequence of symbols naming namespaces defined in .clj files below
-  DIR-PATH.
-
-  Note: tools.namespace supports only one namespace per file. We inherit this
-  limitation. This means, if you have a file that defines more than one
-  namespace, find-clj-nssyms will only be able to extract the first. You can
-  plug in your own namespace scanner, in order to overcome this.
-
-  Class: source, non-standard
-
-  Replacement requirements: see grc/nssym-src"
-  [dir-path]
-  (tns.find/find-namespaces-in-dir (io/as-file dir-path)))
-
-(defn clj-jar-nssym-src [jar-file]
-  (tns.find/find-namespaces-in-jarfile jar-file))
-
-(defconstrainedfn* nssym->deftups [grc/takes-nssym grc/deftup-src]
-  "Returns a tuple [NSSYM sym] for each def in the namespace denoted by NSSYM
-  where sym is the symbol referring to the def.
-
-  Class: source, non-standard
-
-  Replacement requirements: see constraints"
-  [nssym]
-  (->> nssym
-       find-ns
-       ns-interns
-       keys
-       (map (fn [s] [nssym s]))))
-
-;; TODO: Handle defs that are not vars or correct constraints.
-(defmulti merge-in-meta
-  "Given a metadata map for a namespace or def, tries to find the namespace's or
-  def's Cmetadata and assoces them under the key :cmeta. Returns metadata maps
-  for any other kind of entity unchanged.
-
-  Class: transformer"
-  :level)
-
-(defmethod merge-in-meta :grimoire.things/def
-  [{[_ nsp-name def-name] :coords-suffix :as data}]
-  (->> def-name
-       symbol
-       (ns-resolve (find-ns (symbol nsp-name)))
-       meta
-       (plumbing/assoc-when data :cmeta)))
-
-(defmethod merge-in-meta :grimoire.things/namespace
-  [{[_ nsp-name] :coords-suffix :as data}]
-  (->> nsp-name
-       symbol
-       find-ns
-       meta
-       (plumbing/assoc-when data :cmeta)))
-
-(defmethod merge-in-meta :default
-  [data]
-  data)
-
-(trammel.provide/contracts
-  [merge-in-meta "" grc/takes-defmap-or-nsmap-or-othermap]
-  [merge-in-meta "" grc/returns-mdmap])
-
-(s/defn spec->artifact-coords [spec :- LeinDepSpec]
-  (let [[group-artifact version & _] spec
-        artifact (name group-artifact)
-        group (or (namespace group-artifact) artifact)]
-    {:group group
-     :artifact artifact
-     :version version}))
-
-(s/defn spec->relpath [spec :- LeinDepSpec]
-  (let [[_ _ _ ?classifier] spec
-        {:keys [artifact group version]} (spec->artifact-coords spec)
-        classifier (if ?classifier (str "-" ?classifier) "")
-        jar-name (str artifact "-" version classifier ".jar")]
-    (io/file group artifact version jar-name)))
-
-;; TODO: Warning or exception when there is more than one file.
-(s/defn find-in-classpath [spec :- LeinDepSpec]
-  (let [jar-path-re (-> spec
-                        spec->relpath
-                        str
-                        Pattern/quote
-                        re-pattern)
-        files (->> [(ClasspathHelper/contextClassLoader)]
-                   (into-array ClassLoader)
-                   ClasspathHelper/forClassLoader
-                   (filter #(re-find jar-path-re (str %))))]
-    (when (> 1 (count files))
-      (gr-util/warn "More than one file conforming to" spec "on classpath."
-                    "Either you have a weird classpath or the author of Grenada
-                     has overlooked something."))
-    (io/as-file (first files))))
-
-(def old-clj-entity-src-graph
-  {:nsmaps         (fnk* [nssyms] (map nssym->nsmap))
-   :deftups        (fnk* [nssyms] (mapcat nssym->deftups))
-   :defmaps        (fnk* [deftups] (map deftup->defmap))
-   :bare-ents      (fnk* [nsmaps defmaps] concat)
-   :ents-with-meta (fnk* [bare-ents] (map merge-in-meta))
-   :entity-maps (fnk [ents-with-meta artifact-coords]
-                  (map #(complete-coords % artifact-coords)
-                       ents-with-meta))})
-
-(defn dir-entity-src [dir-path artifact-coords]
-  (-> ((graph/eager-compile clj-entity-src-graph)
-       {:dir-path dir-path
-        :artifact-coords artifact-coords
-        :nssyms         (fnk* [dir-path] clj-dir-nssym-src)})
-      :entity-maps))
-
-(s/defn ^:always-validate jar-entity-src [spec :- LeinDepSpec]
-  (if-let [jar-file-file (find-in-classpath spec)]
-    (-> ((graph/eager-compile (assoc clj-entity-src-graph
-                                     :nssyms
-                                     (fnk* [jar-file] clj-jar-nssym-src)))
-         {:jar-file (JarFile. jar-file-file)
-          :artifact-coords (spec->artifact-coords spec)})
-        :entity-maps)
-    (throw (IllegalArgumentException. (str "No JAR conforming to " spec
-                                           " found on classpath.")))))

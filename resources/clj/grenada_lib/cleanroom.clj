@@ -15,10 +15,10 @@
         namesp-name (str (get (meta v) :ns ""))]
    (.write w (str "#grenada/var \"" "Dude!" namesp-name "/" var-name "\""))))
 
-;; TODO: Implement eliminating things that would be written with #< by doing something
-;; similar to what Letterpress does
+;; TODO: Implement eliminating things that would be written with #< by doing
+;; something similar to what Letterpress does
 ;; (https://groups.google.com/d/msg/clojure/Y-zccAoGCBw/Mcq2iTLjUJEJ)
-;; when running in pre 1.7.0-RC1 Clojure.
+;; when running in pre 1.7.0-RC1 Clojure. (RM 2015-06-19)
 (defn pr-str-meta [m]
   (pr-str m))
 
@@ -30,6 +30,7 @@
        keys
        (map str)))
 
+;; TODO: Add something that finds non-vars. (RM 2015-06-19)
 (defn ns-meta [ns-str]
   (->> ns-str
        symbol
@@ -37,6 +38,7 @@
        meta
        pr-str-meta))
 
+;; TODO: Add something that can extract metadata from non-vars. (RM 2015-06-19)
 (defn var-meta [sym-str]
   (->> sym-str
        symbol
