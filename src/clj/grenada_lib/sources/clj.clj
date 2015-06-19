@@ -1,6 +1,7 @@
 (ns grenada-lib.sources.clj
   "Procedures for extracting metadata from .clj files."
   (:require [clojure.java.io :as io]
+            [clojure.edn :as edn]
             [clojure.string :as string]
             [grenada-lib.util :as gr-util :refer [fnk* defconstrainedfn*]]
             [grenada-lib.sources.contracts :as grc]
@@ -57,7 +58,6 @@
              (str where-to-look " is not a valid thing to search for entities."
                   " Maybe you forgot to wrap it in a File?")))))
 
-
 ;; TODO: Provide a slot for some little extractor library. Of course it can be
 ;; included in the files, but it would be better to make it official and warn
 ;; people not to introduce dependencies that would scramble up everything.
@@ -91,6 +91,7 @@
                         ['org.projectodd.shimdandy/shimdandy-impl shimdandy-v])
         shim-api-jar (resolve-spec
                        ['org.projectodd.shimdandy/shimdandy-api shimdandy-v])
+        cleanroom-file [(io/resource "clj/")]
 
         class-ldr
         (URLClassLoader.
@@ -98,6 +99,7 @@
                                (concat shim-api-jar
                                        shim-impl-jar
                                        clojure-jar
+                                       cleanroom-file
                                        files)))
           (.getParent (ClassLoader/getSystemClassLoader)))
 
@@ -157,9 +159,9 @@
   [rt]
   (fn [nssym]
     (->> nssym
-         (find-ns-in-rt rt)
-         (.invoke rt "clojure.core/ns-interns")
-         keys
+         str
+         (.invoke rt "grenada-lib.cleanroom/ns-interns-strs")
+         (map symbol)
          (map (fn [s] [nssym s])))))
 
 (defconstrainedfn* deftup->defmap [grc/takes-symtup grc/returns-defmap]
@@ -176,17 +178,16 @@
 (defn merge-in-ns-meta-in-rt [rt]
   (fn [{[_ nsp-name] :coords-suffix :as data}]
     (->> nsp-name
-         symbol
-         (find-ns-in-rt rt)
-         (.invoke rt "clojure.core/meta")
+         (.invoke rt "grenada-lib.cleanroom/ns-meta")
+         (edn/read-string {:default (constantly :unknown-object-ignored)})
          (plumbing/assoc-when data :cmeta))))
 
 (defn merge-in-def-meta-in-rt [rt]
   (fn [{[_ nsp-name def-name] :coords-suffix :as data}]
-    (->> def-name
-         symbol
-         (ns-resolve-in-rt rt (find-ns-in-rt rt (symbol nsp-name)))
-         (.invoke rt "clojure.core/meta")
+    (->> (symbol nsp-name def-name)
+         str
+         (.invoke rt "grenada-lib.cleanroom/var-meta")
+         (edn/read-string {:default (constantly :unknown-object-ignored)})
          (plumbing/assoc-when data :cmeta))))
 
 (defn complete-coords
@@ -197,6 +198,11 @@
 
 ; - We might get a JAR file, a directory, a .clj file, a .cljc file, a dependency
 ;   spec.
+; - Files alone don't work with the URLClassLoader or require. Don't know what
+;   is the reason. You have to specify the directory that contains the
+;   directories according to the namespace. So, if you want to require namespace
+;   my.namespace somewhere, you can't just put /path/to/my/namespace.clj in the
+;   classloader. You have to put /path/to/. And the trailing slash is required.
 ; - For everything but the dependency spec we can create a file-seq and run
 ;   tns.find/find-namespaces on it.
 ; - For the dependency spec we have resolve-dependencies (Pomegranate) it first
@@ -234,7 +240,8 @@
 
    :runtime
    (fnk [bare-runtime nssyms]
-     (.require bare-runtime (string-array "clojure.core"))
+     (.require bare-runtime (string-array "clojure.core"
+                                          "grenada-lib.cleanroom"))
      (.require bare-runtime (apply string-array (map str nssyms)))
      bare-runtime)
 
