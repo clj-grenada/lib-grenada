@@ -1,0 +1,4 @@
+ - We need the following sources:
+    - metadata JARs
+    - CLJ dir/JAR source
+    - CLJS dir/JAR source

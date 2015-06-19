@@ -2,6 +2,7 @@
   "Procedures for extracting metadata from Clojure source trees and JAR files."
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
+            [grenada-lib.config :refer [config]]
             [grenada-lib.util :as gr-util :refer [fnk* defconstrainedfn*]]
             [grenada-lib.sources.contracts :as grc]
             [grenada-lib.reading :as reading]
@@ -23,17 +24,6 @@
 ;;;       the stuff in this namespace extensible or to provide an API that makes
 ;;;       writing new extractors reasonably easy. (RM 2015-06-19)
 
-;;;; Global config
-
-;;; TODO: Make the following defs configurable. (RM 2015-06-19)
-
-;; Credits: https://github.com/boot-clj/boot/blob/c244cc6cffea48ce2912706567b3bc41a4d387c7/boot/aether/src/boot/aether.clj
-(def default-repositories {"clojars"       "https://clojars.org/repo/"
-                           "maven-central" "https://repo1.maven.org/maven2/"})
-
-(def shimdandy-v "1.1.0")
-
-
 ;;;; Schemas
 
 (def LeinDepSpec
@@ -51,7 +41,7 @@
   (let [files (aether/dependency-files
                 (aether/resolve-dependencies
                   :coordinates [dep-spec]
-                  :repositories default-repositories))]
+                  :repositories (safe-get config :default-repositories)))]
     (when (zero? (count files))
       (throw (IllegalArgumentException. (str "Couldn't resolve dependency"
                                              dep-spec))))
@@ -105,10 +95,12 @@
   [clj-depspec :- LeinDepSpec files]
   (let [clojure-jar (resolve-spec clj-depspec)
         shim-impl-jar (resolve-spec
-                        ['org.projectodd.shimdandy/shimdandy-impl shimdandy-v])
+                        ['org.projectodd.shimdandy/shimdandy-impl
+                         (safe-get config :shimdandy-version)])
         shim-api-jar (resolve-spec
-                       ['org.projectodd.shimdandy/shimdandy-api shimdandy-v])
-        cleanroom-file [(io/resource "clj/")]
+                       ['org.projectodd.shimdandy/shimdandy-api
+                        (safe-get config :shimdandy-version)])
+        cleanroom-dir [(io/resource "clj/")]
 
         class-ldr
         (URLClassLoader.
@@ -116,7 +108,7 @@
                                (concat shim-api-jar
                                        shim-impl-jar
                                        clojure-jar
-                                       cleanroom-file
+                                       cleanroom-dir
                                        files)))
           (.getParent (ClassLoader/getSystemClassLoader)))
 
