@@ -6,6 +6,7 @@
             [darkestperu.jar :as jar]
             [plumbing.core :refer [safe-get]]
             [grenada-lib.config :refer [config]]
+            [grenada-lib.reading :as reading]
             grimoire.util
             [leiningen.pom :as pom]))
 
@@ -17,33 +18,16 @@
 
 ;;;; Miscellaneous helpers
 
-(defn coords->path [coords]
-  (apply io/file (map grimoire.util/munge coords)))
-
 (defn ord-file-seq [fl]
   (filter #(.isFile %) (file-seq fl)))
 
 
 ;;;; A source
 
-; TODO: We need a way to uniquely specify which metadata JAR we want the
-; metadata from.
-(defn read-metadata [where-to-look])
-
-
-;;;; Exporter (public API)
-
-(defn- exp-map-fs-hier [m out-dir]
-  (let [data-dir (io/file out-dir (coords->path (:coords m)))
-        data-path (io/file data-dir (safe-get config :datafile-name))]
-    (io/make-parents data-path)
-    (with-open [writer (io/writer data-path)]
-      (binding [*out* writer] (prn m)))
-    data-path))
-
-(defn exp-data-fs-hier [data out-dir]
-  (doseq [m data]
-    (exp-map-fs-hier m out-dir)))
+;; TODO: Support reading from JARs. (RM 2015-06-19)
+(defn read-metadata [where-to-look]
+  (for [f (ord-file-seq (io/file where-to-look))]
+    (reading/read-string (slurp f))))
 
 
 ;;;; Postprocessors (public API)
