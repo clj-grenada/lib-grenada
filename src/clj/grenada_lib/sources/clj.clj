@@ -6,7 +6,6 @@
             [grenada-lib.util :as gr-util :refer [fnk* defconstrainedfn*]]
             [grenada-lib.sources.contracts :as grc]
             [grenada-lib.reading :as reading]
-            [medley.core :refer [dissoc-in]]
             [clojure.tools.namespace.find :as tns.find]
             [schema.core :as s]
             [clojure.pprint :refer [pprint]]
@@ -37,14 +36,30 @@
 (defn string-array [& args]
   (into-array String args))
 
-(s/defn resolve-spec [dep-spec :- LeinDepSpec]
-  (let [files (aether/dependency-files
-                (aether/resolve-dependencies
-                  :coordinates [dep-spec]
-                  :repositories (safe-get config :default-repositories)))]
+(s/defn ^:always-validate resolve-specs
+  "
+
+  If you find yourself calling this procedure twice and then concat-ing the
+  results, you've found yourself getting into trouble. The dependency resolution
+  mechanism needs to see all dependency specifications at once in order to work
+  correctly. See also the implementation comment on get-extraction-shim."
+  [& dep-specs :- [LeinDepSpec]]
+  (aether/dependency-files
+    (aether/resolve-dependencies
+      :coordinates dep-specs
+      :repositories (safe-get config :default-repositories))))
+
+(s/defn resolve-artifact [dep-spec :- LeinDepSpec]
+  (let [files (map #(safe-get (meta %) :file)
+                   (aether/resolve-artifacts
+                     :coordinates [dep-spec]
+                     :repositories (safe-get config :default-repositories)))]
     (when (zero? (count files))
       (throw (IllegalArgumentException. (str "Couldn't resolve dependency"
                                              dep-spec))))
+    (when (> (count files) 1)
+      (throw (AssertionError.
+               "A dep-spec shouldn't resolve to more than one file.")))
     files))
 
 (defn create-file-seq [where-to-look]
@@ -54,7 +69,7 @@
     where-to-look
 
     (and (vector? where-to-look) (symbol? (first where-to-look)))
-    (resolve-spec (s/validate LeinDepSpec where-to-look))
+    (resolve-artifact (s/validate LeinDepSpec where-to-look))
 
     (instance? java.io.File where-to-look)
     [where-to-look]
@@ -64,6 +79,19 @@
              (str where-to-look " is not a valid thing to search for entities."
                   " Maybe you forgot to wrap it in a File?")))))
 
+;; Attention when changing the code:
+;;
+;; If you don't know about Maven dependency resolution and wonder why we're
+;; doing things the way we're doing them, go away and read and understand
+;; everything before you change anything. Especially you need to understand why
+;; we feed all the depspecs to resolve-specs at once and why this is absolutely
+;; necessary. In short, it is absolutely necessary, because the Maven dependency
+;; resolution mechanism needs to see all the dependencies together in order to
+;; work correctly. If you run it with some dependencies first and then with some
+;; other dependencies and then just concat the resulting collections of files,
+;; you will likely end up with two versions of the same artifact on the
+;; classpath. And not notice it. – Very bad.
+;;
 ;; About the implementation:
 ;;
 ;; The SystemClassLoader is able to load anything from the classpath and will do
@@ -89,27 +117,28 @@
 ;;       included in the files, but it would be better to make it official and
 ;;       warn people not to introduce dependencies that would scramble up
 ;;       everything. (RM 2015-06-19)
+;; TODO: Support creating shims with a local Leiningen project loaded. (RM
+;;       2015-06-21)
+;; TODO: Support creating shims with a local JAR loaded. (RM 2015-06-21)
 (s/defn get-extraction-shim
   "Creates a new Clojure runtime with only the Clojure according to CLJ-DEPSPEC
-  and the FILES loaded."
-  [clj-depspec :- LeinDepSpec files]
-  (let [clojure-jar (resolve-spec clj-depspec)
-        shim-impl-jar (resolve-spec
-                        ['org.projectodd.shimdandy/shimdandy-impl
-                         (safe-get config :shimdandy-version)])
-        shim-api-jar (resolve-spec
+  and the JARs behind WHERE-TO-LOOK-DEPSPEC loaded.
+
+  Note that currently this only supports creating runtimes with files according
+  to Leiningen dependency specs loaded. "
+  [clj-depspec :- LeinDepSpec where-to-look-depspec]
+  (let [jars-to-load (resolve-specs  ; See comment above!
+                       clj-depspec
+                       ['org.projectodd.shimdandy/shimdandy-impl
+                        (safe-get config :shimdandy-version)]
                        ['org.projectodd.shimdandy/shimdandy-api
-                        (safe-get config :shimdandy-version)])
-        cleanroom-dir [(io/resource "clj/")]
+                        (safe-get config :shimdandy-version)]
+                       where-to-look-depspec)
+        cleanroom-dir (io/resource "clj/")
 
         class-ldr
         (URLClassLoader.
-          (into-array URL (map io/as-url
-                               (concat shim-api-jar
-                                       shim-impl-jar
-                                       clojure-jar
-                                       cleanroom-dir
-                                       files)))
+          (into-array URL (map io/as-url (conj jars-to-load cleanroom-dir)))
           (.getParent (ClassLoader/getSystemClassLoader)))
 
         runtime-shim-class
@@ -118,9 +147,13 @@
         new-runtime-method
         (.getMethod runtime-shim-class
                     "newRuntime"
-                    (into-array Class [ClassLoader String]))]
-    (.invoke new-runtime-method
-             nil (object-array [class-ldr "Grenada capturing"]))))
+                    (into-array Class [ClassLoader String]))
+        runtime
+        (.invoke new-runtime-method
+                 nil (object-array [class-ldr "Grenada capturing"]))]
+    (.require runtime (string-array "clojure.core"
+                                    "grenada-lib.cleanroom"))
+    runtime))
 
 
 ;;;; Non-standard transformers that don't require a separate runtime
@@ -216,12 +249,10 @@
    (fnk [files] (sort (tns.find/find-namespaces files)))
 
    :bare-runtime
-   (fnk* [clj-depspec files] get-extraction-shim)
+   (fnk* [clj-depspec where-to-look] get-extraction-shim)
 
    :runtime
    (fnk [bare-runtime nssyms]
-     (.require bare-runtime (string-array "clojure.core"
-                                          "grenada-lib.cleanroom"))
      (.require bare-runtime (apply string-array (map str nssyms)))
      bare-runtime)
 
@@ -229,7 +260,7 @@
    (fnk* [nssyms] (map nssym->nsmap))
 
    :deftups
-   (fnk [runtime nssyms] (mapcat (nssym->deftups-in-rt runtime)
+   (fnk [runtime nssyms] (println nssyms) (mapcat (nssym->deftups-in-rt runtime)
                                  nssyms))
 
    :defmaps
@@ -252,8 +283,15 @@
      (map #(complete-coords % artifact-coords) ents-with-meta))})
 
 ;; TODO: Check that the user didn't provide a *.clj File. (RM 2015-06-19)
+;; TODO: Build support for the stuff that is not Leiningen dependency specs,
+;;       remove the first paragraph of the doc string and correct the second
+;;       paragraph. (RM 2015-06-21)
 (s/defn ^:always-validate clj-entity-src
   "
+
+  IMPORTANT NOTE: Ignore the following paragraph. What is written there will be
+  supported again in a similar way. Right now, however, WHERE-TO-LOOK must be a
+  Leiningen-style dependency spec.
 
   WHERE-TO-LOOK can either be a JAR File or a directory File. If it is a
   directory, it has to be the root of the tree of Clojure files to scan. That
