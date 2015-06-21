@@ -16,7 +16,7 @@
 ;;;; Hierarchical filesystem exporter
 
 (defn- exp-map-fs-hier [m out-dir]
-  (let [data-dir (io/file out-dir (coords->path (:coords m)))
+  (let [data-dir (io/file out-dir (coords->path (safe-get m :coords)))
         data-path (io/file data-dir (safe-get config :datafile-name))]
     (io/make-parents data-path)
     (prn-spit data-path m)

@@ -220,8 +220,9 @@
 
 ;;;; Public API
 
+;;; TODO: Dissoc :extensions from :cmeta and merge with toplevel :extensions.
 ;;; TODO: Add a convenience procedure for extracting metadata from
-;;;       clojure-*.jars. (RM 2015-06-19)
+;;;       clojure-* specs. (RM 2015-06-23)
 ;;; TODO: Add a convenience procedure that automatically fills in the
 ;;;       :artifact-coords when given a depspec for :where-to-look. (RM
 ;;;       2015-06-19)
@@ -260,8 +261,7 @@
    (fnk* [nssyms] (map nssym->nsmap))
 
    :deftups
-   (fnk [runtime nssyms] (println nssyms) (mapcat (nssym->deftups-in-rt runtime)
-                                 nssyms))
+   (fnk [runtime nssyms] (mapcat (nssym->deftups-in-rt runtime) nssyms))
 
    :defmaps
    (fnk* [deftups] (map deftup->defmap))

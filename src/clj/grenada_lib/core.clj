@@ -22,16 +22,26 @@
   (filter #(.isFile %) (file-seq fl)))
 
 
+;;;; A predicate (to be made redundant by Guten-tag)
+
+(defn def? [m]
+  (= (safe-get m :level) :grimoire.things/def))
+
+
 ;;;; A source
 
 ;; TODO: Support reading from JARs. (RM 2015-06-19)
 (defn read-metadata [where-to-look]
-  (for [f (ord-file-seq (io/file where-to-look))]
-    (reading/read-string (slurp f))))
+  (mapcat #(reading/read-string (slurp %))
+          (ord-file-seq (io/file where-to-look))))
 
 
 ;;;; Postprocessors (public API)
 
+;; TODO: Correct problems with relative paths. .getParentFile only works with
+;;       files that have more than one segment. However, when I converted to an
+;;       absolute filename, it .relativizePath complained that "other" was a
+;;       different type of path. (RM 2015-06-24)
 (defn jar-from-files
   "Takes the Grenada data from IN-DIR and packages them up in a JAR. Also
   creates a pom.xml with Maven coordinates from COORDS-OUT. Writes JAR and
@@ -51,6 +61,8 @@
     (jar/make-jar jar-path {:manifest-version "1.0"}
                   (conj files-map [pom-path pom-in-jar]))))
 
+;; TODO: If we're staying with Grenada, change classifier to "grenadata". (RM
+;;       2015-06-23)
 (defn deploy-jar [{artifact :name :keys [group version] :as coords} out-dir
                   [u p]]
   (aether/deploy
