@@ -22,6 +22,8 @@
 ;;;       for people to write .clj extractors. Think about how either to make
 ;;;       the stuff in this namespace extensible or to provide an API that makes
 ;;;       writing new extractors reasonably easy. (RM 2015-06-19)
+;;; TODO: Think about what should be private and what should be public in this
+;;;       namespace. (RM 2015-06-24)
 
 ;;;; Schemas
 
@@ -33,7 +35,7 @@
 
 ;;;; Helpers
 
-(defn string-array [& args]
+(defn- string-array [& args]
   (into-array String args))
 
 (s/defn ^:always-validate resolve-specs

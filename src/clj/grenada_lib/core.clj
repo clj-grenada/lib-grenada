@@ -12,13 +12,13 @@
 
 ;;;; Pseudo config
 
-(defn out-jar [{artifact :name version :version}]
+(defn- out-jar [{artifact :name version :version}]
   (io/file (str artifact "-" version "-metadata.jar")))
 
 
 ;;;; Miscellaneous helpers
 
-(defn ord-file-seq [fl]
+(defn- ord-file-seq [fl]
   (filter #(.isFile %) (file-seq fl)))
 
 

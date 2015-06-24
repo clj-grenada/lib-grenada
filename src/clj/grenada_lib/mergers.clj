@@ -9,10 +9,12 @@
 ;;; Make sure that when you're changing the code around here, the functions that
 ;;; you're using do the right thing, too.
 
-(defn separate-key [m k]
+;;;; Universal helpers
+
+(defn- separate-key [m k]
   [(get m k) (dissoc m k)])
 
-(defn merge-nonconflict [m1 m2]
+(defn- merge-nonconflict [m1 m2]
   (map/merge-with-key
     (fn [k v1 v2]
       (if (= v1 v2)
@@ -22,7 +24,10 @@
                       ". Refusing to merge.")))))
     m1 m2))
 
-(defn merge-fn-from [handler-for]
+
+;;;; The simple merge and its helpers
+
+(defn- merge-fn-from [handler-for]
   (fn [k v1 v2]
     (if-let [handle (get handler-for k)]
       (handle v1 v2)
@@ -30,7 +35,7 @@
                (str "Different values " v1 " and " v2 " supplied for extension"
                     " " k " and no handler. Refusing to merge."))))))
 
-(defn simple-merge-2 [& [ext-handlers]]
+(defn- simple-merge-2 [& [ext-handlers]]
   (fn [m1 m2]
     (let [[[ext1 other1] [ext2 other2]]
           (map #(separate-key % :extensions) [m1 m2])]

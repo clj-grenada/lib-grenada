@@ -13,6 +13,7 @@
   (with-open [writer (io/writer path)]
     (binding [*out* writer] (prn x))))
 
+
 ;;;; Hierarchical filesystem exporter
 
 (defn- exp-map-fs-hier [m out-dir]
@@ -27,7 +28,8 @@
     (exp-map-fs-hier m out-dir)))
 
 
-;;;; Flat filesystem exporter
+
+;;;; Flat filesystem exporters
 
 (defn fs-flat [data out-file]
   (prn-spit out-file data))
