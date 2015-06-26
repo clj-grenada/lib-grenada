@@ -1,4 +1,4 @@
-(ns grenada-lib.cleanroom
+(ns grenada.cleanroom
   "This namespace must not be loaded into the regular Clojure environment."
   (:import java.io.Writer))
 

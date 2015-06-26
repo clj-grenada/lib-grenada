@@ -1,8 +1,8 @@
-(ns grenada-lib.sources.contracts
+(ns grenada.sources.contracts
   "Contracts for various things that can be customized in the
   grenada-lib.sources."
   (:require [trammel.core :as tr]
-            [grenada-lib.util :as gren-util]
+            [grenada.util :as gren-util]
             [clojure.java.io :as io]))
 
 (tr/defcontract nssym-src

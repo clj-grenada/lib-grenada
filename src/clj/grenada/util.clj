@@ -1,8 +1,11 @@
-(ns grenada-lib.util
+(ns grenada.util
   "Miscellaneous utilities."
   (:require plumbing.core
             clojure.core.contracts
             trammel.provide))
+
+;;; TODO: Rename this namespace to grenada.utils in order to make it consistent
+;;;       with what I usually do. (RM 2015-06-27)
 
 (defn warn [& args]
   (binding [*out* *err*] (apply println "WARNING! "args)))

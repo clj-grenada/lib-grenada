@@ -1,4 +1,4 @@
-(ns grenada-lib.reading
+(ns grenada.reading
   "A wrapper around edn/read-string with the configurations specific to
   Grenada."
   (:refer-clojure :exclude [read-string])

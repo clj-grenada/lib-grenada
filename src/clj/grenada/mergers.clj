@@ -1,7 +1,7 @@
-(ns grenada-lib.mergers
+(ns grenada.mergers
   (:require [plumbing.core :as plumbing :refer [safe-get]]
             [plumbing.map :as map]
-            [grenada-lib.converters :as gr-conv]))
+            [grenada.converters :as gr-conv]))
 
 ;;; Note that these functions don't contain much any handling of nils or
 ;;; non-existent map entries. This is because the functions they're using have

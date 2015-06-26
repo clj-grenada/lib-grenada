@@ -1,4 +1,4 @@
-(ns grenada-lib.config
+(ns grenada.config
   "Static configuration for Grenada.")
 
 ;;; TODO: Make these things configurable from the outside. (RM 2015-06-19)

@@ -1,12 +1,12 @@
-(ns grenada-lib.core
+(ns grenada.core
   "This namespace contains all sorts of stuff that hasn't be cleaned up and
   sorted into the appropriate namespaces yet."
   (:require [clojure.java.io :as io]
             [cemerick.pomegranate.aether :as aether]
             [darkestperu.jar :as jar]
             [plumbing.core :refer [safe-get]]
-            [grenada-lib.config :refer [config]]
-            [grenada-lib.reading :as reading]
+            [grenada.config :refer [config]]
+            [grenada.reading :as reading]
             grimoire.util
             [leiningen.pom :as pom]))
 

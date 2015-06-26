@@ -1,11 +1,11 @@
-(ns grenada-lib.sources.clj
+(ns grenada.sources.clj
   "Procedures for extracting metadata from Clojure source trees and JAR files."
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
-            [grenada-lib.config :refer [config]]
-            [grenada-lib.util :as gr-util :refer [fnk* defconstrainedfn*]]
-            [grenada-lib.sources.contracts :as grc]
-            [grenada-lib.reading :as reading]
+            [grenada.config :refer [config]]
+            [grenada.util :as gr-util :refer [fnk* defconstrainedfn*]]
+            [grenada.sources.contracts :as grc]
+            [grenada.reading :as reading]
             [clojure.tools.namespace.find :as tns.find]
             [schema.core :as s]
             [clojure.pprint :refer [pprint]]
@@ -154,7 +154,7 @@
         (.invoke new-runtime-method
                  nil (object-array [class-ldr "Grenada capturing"]))]
     (.require runtime (string-array "clojure.core"
-                                    "grenada-lib.cleanroom"))
+                                    "grenada.cleanroom"))
     runtime))
 
 
@@ -200,14 +200,14 @@
   (fn [nssym]
     (->> nssym
          str
-         (.invoke rt "grenada-lib.cleanroom/ns-interns-strs")
+         (.invoke rt "grenada.cleanroom/ns-interns-strs")
          (map symbol)
          (map (fn [s] [nssym s])))))
 
 (defn merge-in-ns-meta-in-rt [rt]
   (fn [{[_ nsp-name] :coords-suffix :as data}]
     (->> nsp-name
-         (.invoke rt "grenada-lib.cleanroom/ns-meta")
+         (.invoke rt "grenada.cleanroom/ns-meta")
          reading/read-string
          (plumbing/assoc-when data :cmeta))))
 
@@ -215,7 +215,7 @@
   (fn [{[_ nsp-name def-name] :coords-suffix :as data}]
     (->> (symbol nsp-name def-name)
          str
-         (.invoke rt "grenada-lib.cleanroom/var-meta")
+         (.invoke rt "grenada.cleanroom/var-meta")
          reading/read-string
          (plumbing/assoc-when data :cmeta))))
 

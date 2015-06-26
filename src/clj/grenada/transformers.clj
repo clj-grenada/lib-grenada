@@ -1,4 +1,4 @@
-(ns grenada-lib.transformers
+(ns grenada.transformers
   (:require [plumbing.core :as plumbing :refer [safe-get]]))
 
 ;;;; Universal helpers
