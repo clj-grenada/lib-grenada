@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.pprint :as pprint]
             [plumbing.core :refer [safe-get]]
+            grimoire.util
             [grenada-lib.config :refer [config]]))
 
 ;;;; Miscellaneous helpers
