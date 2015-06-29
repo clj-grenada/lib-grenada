@@ -6,11 +6,13 @@
             [grenada.util :as gr-util :refer [fnk* defconstrainedfn*]]
             [grenada.sources.contracts :as grc]
             [grenada.reading :as reading]
+            [grenada.things :as t]
             [clojure.tools.namespace.find :as tns.find]
             [schema.core :as s]
             [clojure.pprint :refer [pprint]]
             [plumbing.core :as plumbing :refer [fnk safe-get]]
             [plumbing.graph :as graph]
+            [plumbing.map :as map]
             [cemerick.pomegranate.aether :as aether])
   (:import java.io.File
            java.util.regex.Pattern
@@ -37,6 +39,18 @@
 
 (defn- string-array [& args]
   (into-array String args))
+
+(defn- dissoc-in*
+  "Like plumbing.core/dissoc-in, but doesn't remove empty maps."
+  [m ks]
+  (if m
+    (if  (<= (count ks) 1)
+      (apply dissoc m ks)
+      (let [path (butlast ks)
+            target-map (get-in m path)
+            target-key (last ks)
+            dissoced-map (dissoc target-map target-key)]
+        (assoc-in m path dissoced-map)))))
 
 (s/defn ^:always-validate resolve-specs
   "
@@ -80,6 +94,18 @@
     (throw (IllegalArgumentException.
              (str where-to-look " is not a valid thing to search for entities."
                   " Maybe you forgot to wrap it in a File?")))))
+
+
+(defn constructor-for-def [defmap]
+  (cond
+    (get defmap :macro)
+    t/->macro
+
+    (and (not (get defmap :macro) (get defmap :arglists)))
+    t/->fn
+
+    :default
+    t/->plain-def))
 
 ;; Attention when changing the code:
 ;;
@@ -160,69 +186,89 @@
 
 ;;;; Non-standard transformers that don't require a separate runtime
 
-(defconstrainedfn* nssym->nsmap [grc/takes-sym grc/returns-nsmap]
-  "Returns a partial metadata map for the namespace denoted by S.
+(defn move-extensions
+  "
 
-  See the code for what this means.
+  Due to nil cases working together well, this also works for Things that don't
+  have Cmetadata. There it just does nothing."
+  [raw-thing]
+  (let [cmeta-extensions (get-in raw-thing [:cmeta :grenada.cmeta/extensions])
+        extensions (safe-get raw-thing :extensions)]
+    (-> raw-thing
+        (dissoc-in* [:cmeta :grenada.cmeta/extensions])
+        (assoc :extensions (map/merge-disjoint extensions cmeta-extensions)))))
 
-  Class: transformer, non-standard
+(defn symbol->str-vec [sym]
+  (mapv str [(namespace sym) (name sym)]))
 
-  Replacement: probably not necessary"
-  [s]
-  {:name (name s)
-   :level :grimoire.things/namespace
-   :coords-suffix ["clj" (name s)]})
+;; Since we're not inside the runtime, we can't use reflection to find out these
+;; things.
+;;
+;; TODO: Look in the Java spec if this is the correct way.
+(defn str->class-vec [qualified-classname]
+  (let [[match nsstr classnm] (re-matches #"(?xms) \A (.+) [.] ([^.]+) \z"
+                                          qualified-classname)]
+    (assert match)
+    [nsstr classnm]))
 
-(defconstrainedfn* deftup->defmap [grc/takes-symtup grc/returns-defmap]
-  "Returns a partial metadata map for the def identified by [NSSYM DEFSYM].
+;; TODO: Implement this properly as soon as we've defined how the names of
+;;       defmultis should look. (RM 2015-06-30)
+(defn defmethod-coords [[_ {qnm :qualified-name} :as thing]]
+  [(-> qnm symbol namespace str) "a-defmethod"])
 
-  Class: transformer, non-standard
+(defn coords-in-platform [[_ {qnm :qualified-name} :as thing]]
+  {:pre [qnm]}
+  (cond
+    ((some-fn t/var-backed? t/special-?) thing)
+    (-> qnm symbol symbol->str-vec)
 
-  Replacement: probably not necessary"
-  [[nssym defsym]]
-  {:name (name defsym)
-   :level :grimoire.things/def
-   :coords-suffix ["clj" (name nssym) (name defsym)]})
+    (t/namespace-? thing)
+    [qnm]
 
-(defn complete-coords
-  [{:keys [coords-suffix] :as ent-data} {artifact :name :keys [group version]}]
-  (-> ent-data
-      (dissoc :coords-suffix)
-      (assoc :coords (into [group artifact version] coords-suffix))))
+    (and (t/class-backed? thing) (not (t/var-backed? thing)))
+    (str->class-vec qnm)
+
+    (t/defmethod-? thing)
+    (defmethod-coords thing)
+
+    :default
+    (throw (AssertionError. "This should not happen. I missed a case."))))
+
+;; REFACTOR: This (except the "clj") and its helpers should go somewhere else.
+;;           Maybe grenada.things? Not sure. (RM 2015-06-30)
+(defn adjust-name-and-coords [{:keys [group artifact version]}]
+  {:pre [artifact group version]}
+  (fn [thing]
+    (let [coords (into [artifact group version "clj"]
+                       (coords-in-platform thing))]
+      (-> thing
+          (dissoc :qualified-name)
+          (assoc :name (last coords))
+          (assoc :coords coords)))))
 
 
 ;;;; Non-standard transformers that require a separate runtime
 
-(defn nssym->deftups-in-rt
-  "
-  Deftups are easier to destructure than namespace-qualified symbols."
-  [rt]
-  (fn [nssym]
-    (->> nssym
-         str
+;; TODO: Add something that finds non-vars. (RM 2015-06-19)
+(defn nsstr->var-def-vecs-in-rt [rt]
+  (fn [nsstr]
+    (->> nsstr
          (.invoke rt "grenada.cleanroom/ns-interns-strs")
-         (map symbol)
-         (map (fn [s] [nssym s])))))
+         (map #(vector :var-def %)))))
 
-(defn merge-in-ns-meta-in-rt [rt]
-  (fn [{[_ nsp-name] :coords-suffix :as data}]
-    (->> nsp-name
-         (.invoke rt "grenada.cleanroom/ns-meta")
-         reading/read-string
-         (plumbing/assoc-when data :cmeta))))
-
-(defn merge-in-def-meta-in-rt [rt]
-  (fn [{[_ nsp-name def-name] :coords-suffix :as data}]
-    (->> (symbol nsp-name def-name)
-         str
-         (.invoke rt "grenada.cleanroom/var-meta")
-         reading/read-string
-         (plumbing/assoc-when data :cmeta))))
+(defn get-raw-thing-in-rt [rt]
+  (s/fn [thing-vec :- [(s/one s/Keyword "kind") (s/one s/Str "name")]]
+    (as-> thing-vec x
+      (pr-str x)
+      (.invoke rt "grenada.cleanroom/data-str-for" x
+               (pr-str t/things-in-has-cmeta))
+      (reading/read-string x)
+      (t/vec->thing- x)
+      (move-extensions x))))
 
 
 ;;;; Public API
 
-;;; TODO: Dissoc :extensions from :cmeta and merge with toplevel :extensions.
 ;;; TODO: Add a convenience procedure for extracting metadata from
 ;;;       clojure-* specs. (RM 2015-06-23)
 ;;; TODO: Add a convenience procedure that automatically fills in the
@@ -232,6 +278,8 @@
 ;;;       :artifact-coords when given a JAR file for :where-to-look. (RM
 ;;;       2015-06-19)
 
+;; TODO: Add a step that retrieves extension metadata from metadata annotations.
+;;       (RM 2015-06-30)
 (def clj-entity-src-graph
   "
 
@@ -245,44 +293,54 @@
   other.
 
   Input nodes: :where-to-look :clj-depspec :artifact-coords"
-  {:files
+  {;;; Finding namespaces to scrutinize
+
+   :files
    (fnk* [where-to-look] create-file-seq)
 
-   :nssyms
-   (fnk [files] (sort (tns.find/find-namespaces files)))
+   :nsstrs
+   (fnk [files] (->> (sort (tns.find/find-namespaces files))
+                     (map str)))
+
+   :nsvecs
+   (fnk* [nsstrs] (map #(vector :grenada.things/namespace %)))
+
+   ;;; Assembling the separate runtime
 
    :bare-runtime
    (fnk* [clj-depspec where-to-look] get-extraction-shim)
 
    :runtime
-   (fnk [bare-runtime nssyms]
-     (.require bare-runtime (apply string-array (map str nssyms)))
+   (fnk [bare-runtime nsstrs]
+     (.require bare-runtime (apply string-array nsstrs))
      bare-runtime)
 
-   :nsmaps
-   (fnk* [nssyms] (map nssym->nsmap))
+   ;;; Finding out what is defined in the namespaces
 
-   :deftups
-   (fnk [runtime nssyms] (mapcat (nssym->deftups-in-rt runtime) nssyms))
+   :var-def-vecs
+   (fnk [runtime nsstrs] (mapcat (nsstr->var-def-vecs-in-rt runtime) nsstrs))
 
-   :defmaps
-   (fnk* [deftups] (map deftup->defmap))
+   ;;; Asking the runtime about all the Things we found
 
-   :nsmaps-with-meta
-   (fnk [runtime nsmaps] (map (merge-in-ns-meta-in-rt runtime)
-                              nsmaps))
+   :thing-vecs
+   (fnk* [nsvecs var-def-vecs] concat)
 
-   :defmaps-with-meta
-   (fnk [runtime defmaps]
-     (map (merge-in-def-meta-in-rt runtime)
-          defmaps))
+   :raw-things
+   (fnk [runtime thing-vecs]
+     (map (get-raw-thing-in-rt runtime) thing-vecs))
 
-   :ents-with-meta
-   (fnk* [nsmaps-with-meta defmaps-with-meta] concat)
+   ;;; Splicing in coordinates
 
-   :entity-maps
-   (fnk [ents-with-meta artifact-coords]
-     (map #(complete-coords % artifact-coords) ents-with-meta))})
+   :things-with-complete-coords
+   (fnk [artifact-coords raw-things]
+     (map (adjust-name-and-coords artifact-coords) raw-things))
+
+   ;;; Final check
+
+   :things
+   (fnk [things-with-complete-coords]
+     (assert (every? t/thing? things-with-complete-coords))
+     things-with-complete-coords)})
 
 ;; TODO: Check that the user didn't provide a *.clj File. (RM 2015-06-19)
 ;; TODO: Build support for the stuff that is not Leiningen dependency specs,
@@ -320,7 +378,7 @@
              {:clj-depspec clj-depspec
               :where-to-look where-to-look
               :artifact-coords artifact-coords})
-            :entity-maps))
+            :things))
 
 
 ;;;; Outdated comments
