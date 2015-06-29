@@ -8,7 +8,7 @@
   (:refer-clojure :exclude [namespace fn fn? var? defmethod record? deftype])
   (:require [clojure.core :as clj]
             [schema.core :as s]
-            [plumbing.core :as plumbing]
+            [plumbing.core :as plumbing :refer [safe-get]]
             [guten-tag.core :as t]))
 
 ;;; Comments on the implementation:
@@ -44,6 +44,9 @@
 
 (defn- keyset [m]
   (set (keys m)))
+
+(defn- safe-get-all-v [m ks]
+  (mapv #(safe-get m %) ks))
 
 
 ;;;; Universal Schema helpers
@@ -125,15 +128,21 @@
 ;;; them into :def/fn, :def/var etc., because I think that feature causes more
 ;;; confusion than it is useful. I group them separately later with the
 ;;; definition of def?.
+;;;
+;;; !!! IMPORTANT !!!
+;;;
+;;; Whenever you add or change something here, you also have to adjust the
+;;; predicates below. Sorry for not yet making this beautiful.
 
 (defthing fn        :ncoords 6 :has-cmeta? true)
-(defthing var       :ncoords 6 :has-cmeta? true)
+(defthing plain-def :ncoords 6 :has-cmeta? true)
 (defthing macro     :ncoords 6 :has-cmeta? true)
 (defthing protocol  :ncoords 6 :has-cmeta? true)
 
 (defthing defmethod :ncoords 6 :has-cmeta? false)
 (defthing record    :ncoords 6 :has-cmeta? false)
 (defthing deftype   :ncoords 6 :has-cmeta? false)
+(defthing special   :ncoords 6 :has-cmeta? false)
 
 
 ;;;; Some predicates for different groups of Things
@@ -148,10 +157,24 @@
   "
 
   These, too, are ordered by frequency in code."
-  (some-fn defmethod? record? deftype?))
+  (some-fn defmethod? record? deftype? special?))
 
 (def def?
   (some-fn def-with-cmeta? def-without-cmeta?))
 
 (def has-cmeta?
   (some-fn namespace? def-with-cmeta?))
+
+
+;;;; Convenience function for constructing Things
+
+(defn map->thing
+  "
+
+  Expects THING-MAP to contain a :cmeta entry if and only if the CONSTRUCTOR
+  constructs a Thing that has a :cmeta field."
+  [constructor thing-map]
+  (let [args (plumbing/conj-when
+               (safe-get-all-v thing-map [:name :coords :extensions])
+               (safe-get thing-map :cmeta))]
+    (apply constructor args)))
