@@ -9,7 +9,7 @@
   (:require [clojure.core :as clj]
             [schema.core :as s]
             [plumbing.core :as plumbing :refer [safe-get]]
-            [guten-tag.core :as t]))
+            [guten-tag.core :as gt]))
 
 ;;; Comments on the implementation:
 ;;;
@@ -87,7 +87,7 @@
     ['plumbing.core 'grimoire.things 'grenada.things]
 
     :voyt.ext/defines
-    (get-in (meta #'t/deftag) [:grenada.cmeta/extensions :voyt.ext/defines])}}
+    (get-in (meta #'gt/deftag) [:grenada.cmeta/extensions :voyt.ext/defines])}}
 
   [thing-sym & {:keys [ncoords has-cmeta?] :as kwargs}]
 
@@ -101,7 +101,7 @@
                   (adheres? (coords-of-len ~ncoords) ~'coords)
                   (adheres? Extensions ~'extensions)]
                 (if has-cmeta? `(adheres? Cmeta ~'cmeta)))]
-    `(t/deftag ~thing-sym ~fields-v
+    `(gt/deftag ~thing-sym ~fields-v
                {:pre ~pre-v})))
 
 
