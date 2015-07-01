@@ -12,7 +12,7 @@
                  [trammel "0.8.0"]
                  [org.clj-grenada/darkestperu "0.1.0-SNAPSHOT"]
                  [com.cemerick/pomegranate "0.3.0"]
-                 [me.arrdem/guten-tag "0.1.0"]
+                 [me.arrdem/guten-tag "0.1.4"]
                  [org.clojure-grimoire/lib-grimoire "0.9.2"]
                  [prismatic/schema "0.4.3"]
                  [prismatic/plumbing "0.4.4"]
