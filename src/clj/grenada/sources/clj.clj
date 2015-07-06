@@ -3,22 +3,17 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
             [grenada.config :refer [config]]
-            [grenada.util :as gr-util :refer [fnk* defconstrainedfn*]]
-            [grenada.sources.contracts :as grc]
+            [grenada.util :as gr-util :refer [fnk*]]
             [grenada.reading :as reading]
             [grenada.things :as t]
             [clojure.tools.namespace.find :as tns.find]
             [schema.core :as s]
-            [clojure.pprint :refer [pprint]]
             [plumbing.core :as plumbing :refer [fnk safe-get]]
             [plumbing.graph :as graph]
             [plumbing.map :as map]
             [cemerick.pomegranate.aether :as aether])
   (:import java.io.File
-           java.util.regex.Pattern
-           java.util.jar.JarFile
-           [java.net URL URLClassLoader]
-           org.reflections.util.ClasspathHelper))
+           [java.net URL URLClassLoader]))
 
 ;;; TODO: The whole thing with the separate runtime made it a lot more difficult
 ;;;       for people to write .clj extractors. Think about how either to make
@@ -379,27 +374,3 @@
               :where-to-look where-to-look
               :artifact-coords artifact-coords})
             :things))
-
-
-;;;; Outdated comments
-
-;;; These notes have to do with the contracts and how to customize this entity
-;;; source in the proper way. I probably won't allow this flexibility, but for
-;;; now the contracts stuff is still in here, so I'll also leave the comments.
-;;;
-;;; Notes:
-;;;
-;;;  - If I write, "see the code", I deem the code so straighforward that it
-;;;    wouldn't make sense to describe it's purpose in prose.
-;;;
-;;;  - If you replace a node (function) A in the graph with a node A' that
-;;;    fulfils the replacement requirements of the A, you can be pretty sure
-;;;    that the rest of the code will still work. Of course you can choose not
-;;;    to fulfil the replacement requirements. But then you have to analyse
-;;;    which nodes depended on A and change them accordingly.
-;;;
-;;;  - If I write, "Replacement: probably not necessary", I think that it
-;;;    wouldn't make much sense to replace that particular node and thus don't
-;;;    provide replacement requirements. If you find a case where you want to
-;;;    replace the node after all, please contact me and I will provide
-;;;    replacement requirements.
