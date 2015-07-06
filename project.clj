@@ -3,7 +3,7 @@
   :url "https://github.com/clj-grenada/lib-grenada"
   :license {:name "MIT License"
             :url "http://opensource.org/licenses/MIT"}
-  :dependencies [[org.clojure/clojure "1.7.0-RC2"]
+  :dependencies [[org.clojure/clojure "1.7.0"]
                  [leiningen "2.5.1"] ; Sorry for the strange dependency.
                                      ; TODO: Think about librarizing the
                                      ;       required code. (RM 2015-06-27)
