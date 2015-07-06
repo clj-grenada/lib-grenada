@@ -9,18 +9,12 @@
                                      ;       required code. (RM 2015-06-27)
                  [org.projectodd.shimdandy/shimdandy-api "1.1.0"]
                  [org.projectodd.shimdandy/shimdandy-impl "1.1.0"]
-                 [trammel "0.8.0"]
                  [org.clj-grenada/darkestperu "0.1.0-SNAPSHOT"]
                  [com.cemerick/pomegranate "0.3.0"]
-                 [me.arrdem/guten-tag "0.1.0"]
+                 [me.arrdem/guten-tag "0.1.4"]
                  [org.clojure-grimoire/lib-grimoire "0.9.2"]
                  [prismatic/schema "0.4.3"]
-                 [prismatic/plumbing "0.4.4"]
-
-                 [org.reflections/reflections "0.9.9-RC1"]
-                 [javax.servlet/javax.servlet-api "3.1.0"]
-                   ; Otherwise we get NoClassDefFoundErrors from Reflections.
-                 ]
+                 [prismatic/plumbing "0.4.4"]]
 
   :source-paths ["src/clj"]
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.10"]]

@@ -25,6 +25,21 @@ early stage of development and not supposed to be used by ordinary people.
    belongs is still lacking a primary description. That's why I don't write it
    at the beginning of the docstring.
 
+### Comment annotations
+
+ - I use comment annotations as defined in the [Clojure Style
+   Guide](https://github.com/bbatsov/clojure-style-guide#comment-annotations).
+   Additionally:
+
+ - DE-HACK: Same definition as HACK in the style guide. Just more consistent
+   with the other annotations, which are imperative verbs and not nouns.
+
+ - REFACTOR: Something that I don't consider a HACK, but that should still be
+   written in a different way or be put somewhere else.
+
+ - MAYBE: A higher-order annotation indicating that some thought should be put
+   into whether (and how) to carry out the respective action.
+
 ### Rationale
 
 Rules for where to write down rationale:
@@ -55,15 +70,42 @@ Rules for where to write down rationale:
    only in some messed up, functional programming-ignorant sense. In general I
    use "procedure" (SICP/Scheme lingo) or "fn".
 
-### Common abbreviations
+### Common names and abbreviations
 
- - nm: name – Can't write it out, because Clojure already has such a function.
+ - prefixes "a", "the": I put them in order to avoid shadowing `clojure.core`
+   bindings. For example, `avar`, `thevec`.
+ - k: key (maybe also used for keyword, but I'll try and avoid this in the
+           future)
+ - kw: keyword
+ - m: map
+ - nm: name
+ - o: object
+ - res: result
+ - sth: something
+ - v: vector, value
 
 ### Extension metadata
 
  - Occasionally you will find Grenada extension metadata attached to some
    things. These are proof-of-concept and are not yet backed by actual Grenada
    extensions.
+
+### Other conventions
+
+ - Clojure lookup semantics (nil returns when something isn't there) have
+   tripped me too often. I will mostly abstain from using things like `(a-map
+   :a-key)` or `(:a-key a-map)` or `(a-vec 42)`. Instead I will use
+   `plumbing.core/safe-get` when I expect a key to be present and
+   `clojure.core/get` when I allow the key not to be present. `clojure.core/get`
+   instead of the short syntax in order to make this explicit. Only when I have
+   verified beforehand that an entry exists might I use the short syntax.
+
+## Version Control
+
+ - Branching and merging workflow follows [Driessen's
+   model](http://nvie.com/posts/a-successful-git-branching-model/).
+ - I reserve the right to rewrite history on and force-push to my own feature
+   branches. I've warned you.
 
 ## License
 
