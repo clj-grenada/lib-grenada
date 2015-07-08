@@ -234,7 +234,7 @@
 (defn adjust-name-and-coords [{:keys [group artifact version]}]
   {:pre [artifact group version]}
   (fn [thing]
-    (let [coords (into [artifact group version "clj"]
+    (let [coords (into [group artifact version "clj"]
                        (coords-in-platform thing))]
       (-> thing
           (dissoc :qualified-name)
