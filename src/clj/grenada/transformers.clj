@@ -1,6 +1,6 @@
 (ns grenada.transformers
   (:require [plumbing.core :as plumbing :refer [safe-get]]
-            [grenada.util :as gr-util]
+            [grenada.utils :as gr-utils]
             [grenada.things :as t]
             [grenada.things.utils :as t-utils]
             [guten-tag.core :as gt]))
@@ -41,7 +41,7 @@
   convenience and safety, please contact me."
   [k f]
   (fn transform-ext-infn [m]
-    (t-utils/conj (gr-util/dissoc-in* m [:extensions k])
+    (t-utils/conj (gr-utils/dissoc-in* m [:extensions k])
                   (f m (plumbing/safe-get-in m [:extensions k])))))
 
 

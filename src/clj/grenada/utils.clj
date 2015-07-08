@@ -1,9 +1,6 @@
-(ns grenada.util
+(ns grenada.utils
   "Miscellaneous utilities."
   (:require plumbing.core))
-
-;;; TODO: Rename this namespace to grenada.utils in order to make it consistent
-;;;       with what I usually do. (RM 2015-06-27)
 
 (defn warn [& args]
   (binding [*out* *err*] (apply println "WARNING! "args)))

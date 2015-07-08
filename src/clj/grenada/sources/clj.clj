@@ -3,7 +3,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
             [grenada.config :refer [config]]
-            [grenada.util :as gr-util :refer [fnk*]]
+            [grenada.utils :as gr-utils :refer [fnk*]]
             [grenada.reading :as reading]
             [grenada.things :as t]
             [clojure.tools.namespace.find :as tns.find]
@@ -178,7 +178,7 @@
   (let [cmeta-extensions (get-in raw-thing [:cmeta :grenada.cmeta/extensions])
         extensions (safe-get raw-thing :extensions)]
     (-> raw-thing
-        (gr-util/dissoc-in* [:cmeta :grenada.cmeta/extensions])
+        (gr-utils/dissoc-in* [:cmeta :grenada.cmeta/extensions])
         (assoc :extensions (map/merge-disjoint extensions cmeta-extensions)))))
 
 (defn symbol->str-vec [sym]
