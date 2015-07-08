@@ -1,7 +1,8 @@
 (ns grenada.mergers
-  (:require [plumbing.core :as plumbing :refer [safe-get]]
-            [plumbing.map :as map]
-            [grenada.converters :as gr-conv]))
+  (:require [guten-tag.core :as gt]
+            [grenada.things.utils :as t-utils]
+            [grenada.converters :as gr-conv]
+            [plumbing.map :as map]))
 
 ;;; Note that these functions don't contain much any handling of nils or
 ;;; non-existent map entries. This is because the functions they're using have
@@ -15,7 +16,7 @@
   [(get m k) (dissoc m k)])
 
 (defn- merge-nonconflict [m1 m2]
-  (map/merge-with-key
+  (t-utils/merge-with-key
     (fn [k v1 v2]
       (if (= v1 v2)
         v1

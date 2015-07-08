@@ -23,8 +23,7 @@
 
 ;;;; Transformers for single maps
 
-(defn strip-all [m]
-  (select-keys m #{:name :coords :level :kind}))
+  (t-utils/select-keys m #{:name :coords :level :kind}))
 
 (defn add-ext [k v]
   (fn [m]
@@ -55,8 +54,10 @@
              (get index-for k2 higher))))
 
 ;; With an external library, we could use an ordered map, to the same end.
-(defn- sort-keys [m]
-  (into (sorted-map-by sensible-key-order) m))
+(defn- sort-keys [[t m :as tm]]
+  {:pre [(gt/tagged? tm)]}
+  (gt/->ATaggedVal t
+                   (into (sorted-map-by sensible-key-order) m)))
 
 ;; TODO: Support higher levels than namespace. (RM 2015-06-20)
 (defn reorder-for-output [ms]
