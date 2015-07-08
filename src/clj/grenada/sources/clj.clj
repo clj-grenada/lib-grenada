@@ -3,7 +3,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
             [grenada.config :refer [config]]
-            [grenada.util :as gr-util :refer [fnk*]]
+            [grenada.utils :as gr-utils :refer [fnk*]]
             [grenada.reading :as reading]
             [grenada.things :as t]
             [clojure.tools.namespace.find :as tns.find]
@@ -34,18 +34,6 @@
 
 (defn- string-array [& args]
   (into-array String args))
-
-(defn- dissoc-in*
-  "Like plumbing.core/dissoc-in, but doesn't remove empty maps."
-  [m ks]
-  (if m
-    (if  (<= (count ks) 1)
-      (apply dissoc m ks)
-      (let [path (butlast ks)
-            target-map (get-in m path)
-            target-key (last ks)
-            dissoced-map (dissoc target-map target-key)]
-        (assoc-in m path dissoced-map)))))
 
 (s/defn ^:always-validate resolve-specs
   "
@@ -190,7 +178,7 @@
   (let [cmeta-extensions (get-in raw-thing [:cmeta :grenada.cmeta/extensions])
         extensions (safe-get raw-thing :extensions)]
     (-> raw-thing
-        (dissoc-in* [:cmeta :grenada.cmeta/extensions])
+        (gr-utils/dissoc-in* [:cmeta :grenada.cmeta/extensions])
         (assoc :extensions (map/merge-disjoint extensions cmeta-extensions)))))
 
 (defn symbol->str-vec [sym]
@@ -234,7 +222,7 @@
 (defn adjust-name-and-coords [{:keys [group artifact version]}]
   {:pre [artifact group version]}
   (fn [thing]
-    (let [coords (into [artifact group version "clj"]
+    (let [coords (into [group artifact version "clj"]
                        (coords-in-platform thing))]
       (-> thing
           (dissoc :qualified-name)

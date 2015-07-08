@@ -42,6 +42,13 @@ early stage of development and not supposed to be used by ordinary people.
 
 ### Rationale
 
+I don't like to puzzle over why people programmed or changed things the way they
+did. That's why I try to do better and document my intents when I think they are
+not clear. However, as much as I try to foresee your puzzlement, there will
+still be times when you can't figure out something or figured out something that
+you think you ought not to have to figure out. Whenever this is the case, write
+me an email and I'll do my best to improve the situation.
+
 Rules for where to write down rationale:
 
  1. If it is important for people looking at the code or wanting to change it,
@@ -62,6 +69,10 @@ Rules for where to write down rationale:
    into a namespace U. They are marked as private in order to prevent people
    from directly using them out of A.
 
+ - I often give anonymous fns a name for better stacktraces. If they are
+   functions returned by another function, they will usually by called
+   `<name-of-out-function>-infn`.
+
 ### Terminology
 
  - I call what is defined with (defn …) or returned by (fn …) a
@@ -74,6 +85,7 @@ Rules for where to write down rationale:
 
  - prefixes "a", "the": I put them in order to avoid shadowing `clojure.core`
    bindings. For example, `avar`, `thevec`.
+ - infn: inner function – See [Comments on the code](#comments-on-the-code).
  - k: key (maybe also used for keyword, but I'll try and avoid this in the
            future)
  - kw: keyword
@@ -82,6 +94,8 @@ Rules for where to write down rationale:
  - o: object
  - res: result
  - sth: something
+ - t: tag
+ - tm: tagged map (guten-tag)
  - v: vector, value
 
 ### Extension metadata

@@ -1,18 +1,30 @@
 (ns grenada.exporters
   (:require [clojure.java.io :as io]
             [clojure.pprint :as pprint]
-            [plumbing.core :refer [safe-get]]
+            fipp.edn
+            fipp.visit
+            [plumbing.core :as plumbing :refer [safe-get]]
             grimoire.util
-            [grenada.config :refer [config]]))
+            [grenada.config :refer [config]]
+            [grenada.things :as t]))
 
 ;;;; Miscellaneous helpers
 
 (defn- coords->path [coords]
   (apply io/file (map grimoire.util/munge coords)))
 
-(defn- prn-spit [path x]
+
+;;;; Printing primitives
+
+(defn prn-spit [path x]
   (with-open [writer (io/writer path)]
     (binding [*out* writer] (prn x))))
+
+;; TODO: Connect this to what is defined in guten-tag. – Currently we're just
+;;       copying the 'g/t and when it changes, we have a problem.
+(defn print-ataggedval [edn-pr [t m]]
+  (fipp.visit/visit-tagged edn-pr {:tag 'g/t
+                                   :form [t m]}))
 
 
 ;;;; Hierarchical filesystem exporter
@@ -60,5 +72,8 @@
     (throw (IllegalStateException.
              (str out-file " already exists. You might not want me to"
                   " overwrite it."))))
-  (with-open [w (io/writer out-file)]
-    (pprint/pprint data w)))
+  (let [thing-symbols (plumbing/for-map [t t/thing-tags]
+                        t print-ataggedval)]
+    (with-open [w (io/writer out-file)]
+      (binding [*out* w]
+        (fipp.edn/pprint data {:symbols thing-symbols})))))

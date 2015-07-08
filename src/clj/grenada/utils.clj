@@ -1,9 +1,6 @@
-(ns grenada.util
+(ns grenada.utils
   "Miscellaneous utilities."
   (:require plumbing.core))
-
-;;; TODO: Rename this namespace to grenada.utils in order to make it consistent
-;;;       with what I usually do. (RM 2015-06-27)
 
 (defn warn [& args]
   (binding [*out* *err*] (apply println "WARNING! "args)))
@@ -18,6 +15,18 @@
                       ~(if (list? form)
                          `(~@form ~@symv)
                          `(~form ~@symv))))
+
+(defn dissoc-in*
+  "Like plumbing.core/dissoc-in, but doesn't remove empty maps."
+  [m ks]
+  (if m
+    (if  (<= (count ks) 1)
+      (apply dissoc m ks)
+      (let [path (butlast ks)
+            target-map (get-in m path)
+            target-key (last ks)
+            dissoced-map (dissoc target-map target-key)]
+        (assoc-in m path dissoced-map)))))
 
 (defn remove-nth
   "Returns COLL with the item with offset N removed.
