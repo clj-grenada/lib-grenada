@@ -321,6 +321,8 @@
 
 ;;;; Various functions for generating def(n) forms – extracted for clarity
 
+;; TODO: Add consistency check: the last coordinate should be the same as the
+;;       :name. (RM 2015-07-07)
 (s/defn ^:private deftag-form
   [{:keys [thing-tag ncoords categories add-to-pre]} :- NormalizedThingDef]
   {:pre [thing-tag ncoords categories add-to-pre]}

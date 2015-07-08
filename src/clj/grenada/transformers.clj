@@ -10,16 +10,11 @@
 (defn- rvector [& args]
   (vec (reverse args)))
 
-;; REFACTOR: Put such getters togeth(t)er somewhere (RM 2015-06-24)
-(defn- get-namespace [m]
-  {:pre [(= :grimoire.things/def (safe-get m :level))]}
-  (plumbing/safe-get-in m [:coords 4]))
-
 
 ;;;; Transformer transformers
 
 (defn apply-if [p f]
-  (fn [x]
+  (fn apply-if-infn [x]
     (if (p x)
       (f x)
       x)))
@@ -69,11 +64,14 @@
 ;; TODO: Support higher levels than namespace. (RM 2015-06-20)
 (defn reorder-for-output [ms]
   (let [sorted-m-ms (map sort-keys ms)
-        nsmaps (sort-by :name (filter #(= :grimoire.things/namespace (:level %))
-                                      sorted-m-ms))
-        defmaps (filter #(= :grimoire.things/def (:level %)) sorted-m-ms)
-        defmaps-by-ns (group-by get-namespace defmaps)]
+        nsmaps (sort-by :name
+                        (filter t/namespace? sorted-m-ms))
+        defmaps (filter t/def? sorted-m-ms)
+        defmaps-by-ns (group-by t/namespace-coord defmaps)]
     (plumbing/aconcat
-      (map #(cons % (sort-by :name (safe-get defmaps-by-ns
-                                             (safe-get % :name))))
-           nsmaps))))
+      (for [n nsmaps
+            :let [ds (as-> n x
+                       (safe-get x :name)
+                       (safe-get defmaps-by-ns x)
+                       (sort-by :name x))]]
+        (cons n ds)))))
