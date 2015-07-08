@@ -35,18 +35,6 @@
 (defn- string-array [& args]
   (into-array String args))
 
-(defn- dissoc-in*
-  "Like plumbing.core/dissoc-in, but doesn't remove empty maps."
-  [m ks]
-  (if m
-    (if  (<= (count ks) 1)
-      (apply dissoc m ks)
-      (let [path (butlast ks)
-            target-map (get-in m path)
-            target-key (last ks)
-            dissoced-map (dissoc target-map target-key)]
-        (assoc-in m path dissoced-map)))))
-
 (s/defn ^:always-validate resolve-specs
   "
 
@@ -190,7 +178,7 @@
   (let [cmeta-extensions (get-in raw-thing [:cmeta :grenada.cmeta/extensions])
         extensions (safe-get raw-thing :extensions)]
     (-> raw-thing
-        (dissoc-in* [:cmeta :grenada.cmeta/extensions])
+        (gr-util/dissoc-in* [:cmeta :grenada.cmeta/extensions])
         (assoc :extensions (map/merge-disjoint extensions cmeta-extensions)))))
 
 (defn symbol->str-vec [sym]

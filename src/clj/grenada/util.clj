@@ -19,6 +19,18 @@
                          `(~@form ~@symv)
                          `(~form ~@symv))))
 
+(defn dissoc-in*
+  "Like plumbing.core/dissoc-in, but doesn't remove empty maps."
+  [m ks]
+  (if m
+    (if  (<= (count ks) 1)
+      (apply dissoc m ks)
+      (let [path (butlast ks)
+            target-map (get-in m path)
+            target-key (last ks)
+            dissoced-map (dissoc target-map target-key)]
+        (assoc-in m path dissoced-map)))))
+
 (defn remove-nth
   "Returns COLL with the item with offset N removed.
 
