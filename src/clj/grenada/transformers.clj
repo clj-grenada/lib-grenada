@@ -1,5 +1,9 @@
 (ns grenada.transformers
-  (:require [plumbing.core :as plumbing :refer [safe-get]]))
+  (:require [plumbing.core :as plumbing :refer [safe-get]]
+            [grenada.util :as gr-util]
+            [grenada.things :as t]
+            [grenada.things.utils :as t-utils]
+            [guten-tag.core :as gt]))
 
 ;;;; Universal helpers
 
@@ -23,7 +27,11 @@
 
 ;;;; Transformers for single maps
 
-  (t-utils/select-keys m #{:name :coords :level :kind}))
+(defn strip-all [tm]
+  (as-> tm x
+    (assoc x :extensions {})
+    (if (t/has-cmeta? x)
+      (assoc x :cmeta {}))))
 
 (defn add-ext [k v]
   (fn [m]
@@ -37,17 +45,16 @@
   (not to mess up the whole metadata map). If you don't believe in freedom,
   convenience and safety, please contact me."
   [k f]
-  (fn [m]
-    {:pre [(get-in m [:extensions k])]}
-    (conj (plumbing/dissoc-in m [:extensions k])
-          (f m (plumbing/safe-get-in m [:extensions k])))))
+  (fn transform-ext-infn [m]
+    (t-utils/conj (gr-util/dissoc-in* m [:extensions k])
+                  (f m (plumbing/safe-get-in m [:extensions k])))))
 
 
 ;;;; Transformers for whole collections
 
 ;; This could be a good one for programming golf, I guess.
 (defn- sensible-key-order [k1 k2]
-  (let [order [:name :level :kind :coords :extensions]
+  (let [order [:name :coords :extensions :cmeta]
         index-for (into {} (map-indexed rvector order))
         higher (count order)]
     (compare (get index-for k1 higher)
