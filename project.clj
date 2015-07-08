@@ -11,8 +11,16 @@
                  [org.projectodd.shimdandy/shimdandy-impl "1.1.0"]
                  [org.clj-grenada/darkestperu "0.1.0-SNAPSHOT"]
                  [com.cemerick/pomegranate "0.3.0"]
+
+                 ;; For new versions of guten-tag, look if the print-method
+                 ;; changed and potentially adjust
+                 ;; grenada.core/print-ataggedval.
                  [me.arrdem/guten-tag "0.1.4"]
                  [org.clojure-grimoire/lib-grimoire "0.9.2"]
+
+                 ;; WARNING: I'm using features of Fipp that are ‘subject to
+                 ;;          change’ according to Fipp's README.
+                 [fipp "0.6.2"]
                  [prismatic/schema "0.4.3"]
                  [prismatic/plumbing "0.4.4"]]
 
