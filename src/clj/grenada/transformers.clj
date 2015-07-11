@@ -1,21 +1,20 @@
 (ns grenada.transformers
-  (:require [plumbing.core :as plumbing :refer [safe-get]]))
+  (:require [plumbing.core :as plumbing :refer [safe-get]]
+            [grenada.utils :as gr-utils]
+            [grenada.things :as t]
+            [grenada.things.utils :as t-utils]
+            [guten-tag.core :as gt]))
 
 ;;;; Universal helpers
 
 (defn- rvector [& args]
   (vec (reverse args)))
 
-;; REFACTOR: Put such getters togeth(t)er somewhere (RM 2015-06-24)
-(defn- get-namespace [m]
-  {:pre [(= :grimoire.things/def (safe-get m :level))]}
-  (plumbing/safe-get-in m [:coords 4]))
-
 
 ;;;; Transformer transformers
 
 (defn apply-if [p f]
-  (fn [x]
+  (fn apply-if-infn [x]
     (if (p x)
       (f x)
       x)))
@@ -23,8 +22,11 @@
 
 ;;;; Transformers for single maps
 
-(defn strip-all [m]
-  (select-keys m #{:name :coords :level :kind}))
+(defn strip-all [tm]
+  (as-> tm x
+    (assoc x :extensions {})
+    (if (t/has-cmeta? x)
+      (assoc x :cmeta {}))))
 
 (defn add-ext [k v]
   (fn [m]
@@ -38,34 +40,38 @@
   (not to mess up the whole metadata map). If you don't believe in freedom,
   convenience and safety, please contact me."
   [k f]
-  (fn [m]
-    {:pre [(get-in m [:extensions k])]}
-    (conj (plumbing/dissoc-in m [:extensions k])
-          (f m (plumbing/safe-get-in m [:extensions k])))))
+  (fn transform-ext-infn [m]
+    (t-utils/conj (gr-utils/dissoc-in* m [:extensions k])
+                  (f m (plumbing/safe-get-in m [:extensions k])))))
 
 
 ;;;; Transformers for whole collections
 
 ;; This could be a good one for programming golf, I guess.
 (defn- sensible-key-order [k1 k2]
-  (let [order [:name :level :kind :coords :extensions]
+  (let [order [:name :coords :extensions :cmeta]
         index-for (into {} (map-indexed rvector order))
         higher (count order)]
     (compare (get index-for k1 higher)
              (get index-for k2 higher))))
 
 ;; With an external library, we could use an ordered map, to the same end.
-(defn- sort-keys [m]
-  (into (sorted-map-by sensible-key-order) m))
+(defn- sort-keys [[t m :as tm]]
+  {:pre [(gt/tagged? tm)]}
+  (gt/->ATaggedVal t
+                   (into (sorted-map-by sensible-key-order) m)))
 
 ;; TODO: Support higher levels than namespace. (RM 2015-06-20)
 (defn reorder-for-output [ms]
   (let [sorted-m-ms (map sort-keys ms)
-        nsmaps (sort-by :name (filter #(= :grimoire.things/namespace (:level %))
-                                      sorted-m-ms))
-        defmaps (filter #(= :grimoire.things/def (:level %)) sorted-m-ms)
-        defmaps-by-ns (group-by get-namespace defmaps)]
+        nsmaps (sort-by :name
+                        (filter t/namespace? sorted-m-ms))
+        defmaps (filter t/def? sorted-m-ms)
+        defmaps-by-ns (group-by t/namespace-coord defmaps)]
     (plumbing/aconcat
-      (map #(cons % (sort-by :name (safe-get defmaps-by-ns
-                                             (safe-get % :name))))
-           nsmaps))))
+      (for [n nsmaps
+            :let [ds (as-> n x
+                       (safe-get x :name)
+                       (safe-get defmaps-by-ns x)
+                       (sort-by :name x))]]
+        (cons n ds)))))
