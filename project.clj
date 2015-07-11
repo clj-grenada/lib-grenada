@@ -1,4 +1,4 @@
-(defproject org.clj-grenada/lib-grenada "0.2.0-SNAPSHOT"
+(defproject org.clj-grenada/lib-grenada "0.2.0"
   :description "A library for processing Clojure metadata"
   :url "https://github.com/clj-grenada/lib-grenada"
   :license {:name "MIT License"
@@ -9,7 +9,7 @@
                                      ;       required code. (RM 2015-06-27)
                  [org.projectodd.shimdandy/shimdandy-api "1.1.0"]
                  [org.projectodd.shimdandy/shimdandy-impl "1.1.0"]
-                 [org.clj-grenada/darkestperu "0.1.0-SNAPSHOT"]
+                 [org.clj-grenada/darkestperu "0.1.1"]
                  [com.cemerick/pomegranate "0.3.0"]
 
                  ;; For new versions of guten-tag, look if the print-method
