@@ -93,6 +93,7 @@ Rules for where to write down rationale:
  - nm: name
  - o: object
  - res: result
+ - s: set, string
  - sth: something
  - t: tag
  - tm: tagged map (guten-tag)
