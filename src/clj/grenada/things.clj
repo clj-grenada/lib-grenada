@@ -59,13 +59,13 @@
   (when (things.def/main-aspect? aspect-def)
     (assert (= (:ncoords aspect-def)
                (count (:coords thing)))
-            "right number of coordinates as defined by Aspect"))
+            "wrong number of coordinates as defined by Aspect"))
   (assert ((:prereqs-pred aspect-def)
            (:aspects thing))
-          "right coordinates according to aspect")
+          "unfulfilled prerequisites according to aspect")
   (assert ((:name-pred aspect-def)
            (last (:coords thing)))
-          "right name according to aspect"))
+          "wrong name according to aspect"))
 
 (defn attach-aspect [aspect-defs aspect-tag thing]
   {:pre [(thing?+ thing)]}
