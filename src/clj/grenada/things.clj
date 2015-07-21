@@ -21,16 +21,33 @@
 
 ;;;; Definitions of the main aspects
 
-(def group-def
-  (things.def/make-main-aspect
-    {:name ::group
-     :ncoords 1
-     :prereqs-pred empty?
-     :name-pred string?}))
+(def main-aspect-defaults
+  {:prereqs-pred empty?
+   :name-pred string?}
 
-(def aspect-defs #{group-def})
+(def main-aspect-specials
+  {::platform
+   {:name-pred (fn valid-platform-name? [n]
+                 (contains? #{"clj" "cljs" "cljclr" "ox" "pixi" "toc"} n))}
 
-(def def-for-aspect (things.def/aspect-defs-set->map aspect-defs))
+   ::find
+   {:name-pred (fn valid-find-name? [_] true)}})
+
+(def main-aspect-names [::group
+                        ::artifact
+                        ::version
+                        ::platform
+                        ::namespace
+                        ::find])
+
+(def def-for-aspect
+  (plumbing/for-map [[i nm] (plumbing/indexed main-aspect-names)]
+    nm
+    (things.def/make-main-aspect
+      (merge main-aspect-defaults
+             {:name nm
+              :ncoords (inc i)}
+             (get main-aspect-specials nm)))))
 
 
 ;;;; Functions for doing stuff with Things and Aspects
