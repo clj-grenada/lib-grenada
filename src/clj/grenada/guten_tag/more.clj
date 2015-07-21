@@ -67,16 +67,17 @@
 (defn- t+?-form
   "||| Returns the form for defining a function with this doc string: |||
 
-  Checks whether X is a tagged value of tag type $NAME-SYM and adheres to the
-  schema for values of tag type $NAME-SYM."
+  Checks whether X is a tagged value of tag type $NAME-SYM. Throws an exception
+  if X doesn't adhere to the schema for values of tag type $NAME-SYM."
   [name-sym schema]
   (let [t?-sym (sym name-sym "?")
         doc-string (make-doc #'t+?-form {:NAME-SYM name-sym})]
     `(defn ~(sym t?-sym "+")
        ~doc-string
        [~'x]
-       (and (~t?-sym ~'x)
-            (schemas/adheres? ~schema (gt/val ~'x))))))
+       (when (~t?-sym ~'x)
+         (s/validate ~schema (gt/val ~'x))
+         true))))
 
 (defn- map->t-form
   "||| Returns the form for defining a function with this doc string: |||
