@@ -47,16 +47,15 @@
 (defn fs-flat [data out-file]
   (prn-spit out-file data))
 
-;; TODO: Always start a new line for the extensions map as well as existing
-;;       extensions. Example:
+;; TODO: Always start a new line for the Bars map as well as existing Bars.
+;;       Example:
 ;;
-;;         {:name …
-;;          :coords …
-;;          :level …
-;;          :extensions
-;;          {:extension1
+;;         {:coords …
+;;          :aspects …
+;;          :bars
+;;          {:bar1
 ;;           …
-;;           :extension2
+;;           :bar2
 ;;           …
 ;;           …}}
 ;;
@@ -72,8 +71,7 @@
     (throw (IllegalStateException.
              (str out-file " already exists. You might not want me to"
                   " overwrite it."))))
-  (let [thing-symbols (plumbing/for-map [t t/thing-tags]
-                        t print-ataggedval)]
-    (with-open [w (io/writer out-file)]
-      (binding [*out* w]
-        (fipp.edn/pprint data {:symbols thing-symbols})))))
+  (with-open [w (io/writer out-file)]
+    (binding [*out* w]
+      (fipp.edn/pprint data {:symbols {::t/thing print-ataggedval}}))))
+                             ; In project.clj I menat this :symbols entry.

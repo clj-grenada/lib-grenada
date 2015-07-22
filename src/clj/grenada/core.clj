@@ -6,7 +6,6 @@
             [darkestperu.jar :as jar]
             [plumbing.core :refer [safe-get]]
             [grenada.config :refer [config]]
-            [grenada.reading :as reading]
             grimoire.util
             [leiningen.pom :as pom]))
 
@@ -21,20 +20,6 @@
 
 (defn- ord-file-seq [fl]
   (filter #(.isFile %) (file-seq fl)))
-
-
-;;;; A predicate (to be made redundant by Guten-tag)
-
-(defn def? [m]
-  (= (safe-get m :level) :grimoire.things/def))
-
-
-;;;; A source
-
-;; TODO: Support reading from JARs. (RM 2015-06-19)
-(defn read-metadata [where-to-look]
-  (mapcat #(reading/read-string (slurp %))
-          (ord-file-seq (io/file where-to-look))))
 
 
 ;;;; Postprocessors (public API)
