@@ -1,7 +1,7 @@
 (ns grenada.things.def
   (:require [plumbing.core :as plumbing :refer [safe-get]]
             [guten-tag.core :as gt]
-            [grenada.guten-tag.more :as gt.more]
+            [grenada.guten-tag.more :as gt-more]
             [schema.core :as s]
             [grenada.schemas :as schemas]))
 
@@ -17,14 +17,14 @@
 
 ;;;; Tag type definitions for two kinds of Aspects
 
-(gt.more/deftag+ main-aspect
+(gt-more/deftag+ main-aspect
                  [name ncoords prereqs-pred name-pred]
                  (assoc AspectSchema :ncoords s/Int))
 
 (defn make-main-aspect [m]
   (map->main-aspect (merge aspect-defaults m)))
 
-(gt.more/deftag+ aspect
+(gt-more/deftag+ aspect
                  [name prereqs-pred name-pred]
                  AspectSchema)
 
@@ -34,5 +34,5 @@
 
 ;;;; Helper function for working with Aspects
 
-(defn aspect-defs-set->map [ds]
+(defn map-from-defs [ds]
   (plumbing/map-from-vals #(safe-get % :name) ds))

@@ -7,12 +7,12 @@
             [grenada.schemas :as schemas]
             [plumbing.core :as plumbing :refer [safe-get safe-get-in]]
             [guten-tag.core :as gt]
-            [grenada.guten-tag.more :as gt.more]
+            [grenada.guten-tag.more :as gt-more]
             [grenada.things.def :as things.def]))
 
 ;;;; New definition of a Thing
 
-(gt.more/deftag+ thing
+(gt-more/deftag+ thing
                  [coords aspects bars]
                  {:coords schemas/Vector
                   :aspects #{schemas/NSQKeyword}
@@ -23,7 +23,7 @@
 
 (def main-aspect-defaults
   {:prereqs-pred empty?
-   :name-pred string?}
+   :name-pred string?})
 
 (def main-aspect-specials
   {::platform
