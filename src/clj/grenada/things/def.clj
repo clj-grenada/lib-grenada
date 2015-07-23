@@ -12,24 +12,20 @@
                    :name-pred schemas/Fn})
 
 (def aspect-defaults {:prereqs-pred (fn [_] true)
-               :name-pred (fn [_] true)})
+                      :name-pred (fn [_] true)})
 
 
 ;;;; Tag type definitions for two kinds of Aspects
 
 (gt-more/deftag+ main-aspect
                  [name ncoords prereqs-pred name-pred]
-                 (assoc AspectSchema :ncoords s/Int))
-
-(defn make-main-aspect [m]
-  (map->main-aspect (merge aspect-defaults m)))
+                 (assoc AspectSchema :ncoords s/Int)
+                 aspect-defaults)
 
 (gt-more/deftag+ aspect
                  [name prereqs-pred name-pred]
-                 AspectSchema)
-
-(defn make-aspect [m]
-  (map->aspect (merge aspect-defaults m)))
+                 AspectSchema
+                 aspect-defaults)
 
 
 ;;;; Helper function for working with Aspects

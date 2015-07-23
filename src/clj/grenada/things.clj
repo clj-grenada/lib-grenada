@@ -16,7 +16,9 @@
                  [coords aspects bars]
                  {:coords schemas/Vector
                   :aspects #{schemas/NSQKeyword}
-                  :bars {schemas/NSQKeyword s/Any}})
+                  :bars {schemas/NSQKeyword s/Any}}
+                 {:aspects #{}
+                  :bars {}})
 
 
 ;;;; Definitions of the main aspects
@@ -43,7 +45,7 @@
 (def def-for-aspect
   (plumbing/for-map [[i nm] (plumbing/indexed main-aspect-names)]
     nm
-    (things.def/make-main-aspect
+    (things.def/map->main-aspect
       (merge main-aspect-defaults
              {:name nm
               :ncoords (inc i)}

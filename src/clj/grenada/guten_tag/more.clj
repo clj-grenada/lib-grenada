@@ -85,15 +85,16 @@
   Checks whether M is a map adhering to the schema of tag type $NAME-SYM. If so,
   constructs a tagged value of type $NAME-SYM with this map. Otherwise throws an
   exception."
-  [name-sym nmsp-str schema]
+  [name-sym nmsp-str schema defaults]
   (let [doc-string (make-doc #'map->t-form {:NAME-SYM name-sym})]
     `(defn ~(sym "map->" name-sym)
        ~doc-string
        [~'m]
-       (s/validate ~schema ~'m)
-       (gt/->ATaggedVal (keyword ~nmsp-str
-                                 (str '~name-sym))
-                        ~'m))))
+       (let [m-with-defaults# (s/validate ~schema
+                                          (merge ~defaults ~'m))]
+         (gt/->ATaggedVal (keyword ~nmsp-str
+                                   (str '~name-sym))
+                          m-with-defaults#)))))
 
 ;; TODO: The distribution of documentation is not optimal here. Think about how
 ;;       to make it better. (RM  2015-07-21)
@@ -108,8 +109,10 @@
                         :voyt.bars/defines ["${NAME-SYM}+?"
                                             "map->${NAME-SYM}"
                                             'guten-tag.core/deftag]}}
-  [name-sym fields schema]
-  `(do
-     (gt/deftag ~name-sym ~fields)
-     ~(t+?-form name-sym schema)
-     ~(map->t-form name-sym (str (ns-name *ns*)) schema)))
+  ([name-sym fields schema]
+   `(deftag+ ~name-sym ~fields ~schema {}))
+  ([name-sym fields schema defaults]
+   `(do
+      (gt/deftag ~name-sym ~fields)
+      ~(t+?-form name-sym schema)
+      ~(map->t-form name-sym (str (ns-name *ns*)) schema defaults))))
