@@ -85,7 +85,7 @@
 
   ## Semantics
 
-  A Thing with the Aspect `::macro` describes a **concrete Clojure macro*, that
+  A Thing with the Aspect `::macro` describes a **concrete Clojure macro**, that
   is, an object for which `(:macro (meta (var <object>))` evaluates to `true`.
 
   ## Prerequisites
@@ -102,9 +102,63 @@
                      (set/subset? #{::t/find ::var-backed} aspects))
      :name-pred string?}))
 
+(def special-def
+  "Definition of the Aspect `::special`.
+
+  ## Semantics
+
+  A Thing with the Aspect `::special` describes a **concrete Clojure special
+  form**. What that means is hard to say exactly.
+
+   1. There are concrete things t that *are* accessible through a **var**, for
+      example `let`. In that case `(:special-form (meta (var t)))` returns
+      `true`. Also their source code is available through
+      clj::clojure.core/source. They are included in the [official listing of
+      special forms](http://clojure.org/special_forms).
+
+   2. There are concrete things that are **not backed by a var** and whose
+      source code is not available, but which, too, are listed as special forms.
+      For example, `def`.
+
+   3. There are concrete things that are not backed by a var and **not listed**
+      as a special form. One I know of is `let*`, but there might be more.
+
+  The first two kinds are `::special`. The third is not considered by Grenada. –
+  It's not considered by anyone else either.
+
+  Concrete finds of the second kind are not interned in any namespace. In order
+  to maintain consistency with other tools, the Aspect `::special` defines the
+  **namespace coordinate** of those Things to be `clojure.core`.
+
+  ## Prequisites
+
+  A Thing already has to be a `:grenada.things/find` in order for `::special` to
+  be attached.
+
+  ## Canonical name
+
+  For the canonical name for special forms of the first kind, see
+  clj::grenada.aspects/var-backed-def. The canonical name of a special form of
+  the second kind is the `str`ing representation of the symbol by which you can
+  use it as the operator in a Clojure [call](http://clojure.org/evaluation).
+
+  ## Remarks
+
+  You may attach the Aspect `::var-backed` to the Things representing special
+  forms of the first kind.
+
+  All this is a bit fuzzy and confused. Suggestions for improvement are welcome.
+  However, there are not so many special forms and their number is fairly
+  constant, so I think we'll just cope with it."
+  (things.def/map->aspect
+   {:name ::special
+    :prereqs-pred (fn special-prereqs-fulfilled? [aspects]
+                    (contains? aspects ::t/find))
+    :name-pred string?}))
+
 
 ;;;; Public API
 
 (def def-for-aspect
   "A map from Aspect keywords to definitions of Aspects in this namespace."
-  (things.def/map-from-defs #{var-backed-def fn-def macro-def}))
+  (things.def/map-from-defs #{var-backed-def fn-def macro-def special-def}))
