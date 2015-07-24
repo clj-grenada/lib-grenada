@@ -75,3 +75,17 @@
     (assert-aspect-attachable aspect-def thing)
     (update thing :aspects
             #(conj % (:name aspect-def)))))
+
+(defn attach-aspects
+  "Attaches all Aspects indicated by ASPECT-TAGS to THING using
+  clj::grenada.things/attach-aspect.
+
+  Aspects are attached in the order given by ASPECT-TAGS. You have to take care
+  that they are in dependency order.
+
+  ASPECT-DEFS is passed to `attach-aspect` unchanged."
+  [aspect-defs aspect-tags thing]
+  (reduce (fn attach-aspects-redfn [cur-thing aspect-tag]
+            (attach-aspect aspect-defs aspect-tag cur-thing))
+          thing
+          aspect-tags))
