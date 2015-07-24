@@ -8,6 +8,8 @@
 (defn adheres? [schema v]
   (nil? (s/check schema v)))
 
+;;; TODO: (Here and in other places.) Switch to s/defschema. (RM 2015-07-24)
+
 (def Fn (s/pred fn? "a fn"))
 
 (def NSQKeyword (s/both s/Keyword

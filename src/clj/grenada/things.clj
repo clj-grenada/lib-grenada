@@ -54,10 +54,13 @@
 
 ;;;; Functions for doing stuff with Things and Aspects
 
+;; MAYBE TODO: (Here and in the following.) Improve the diagnostic messages.
+;;             Include references to places in the spec. (RM 2015-07-24)
+;; TODO: Use plumbing.fnk.schema/assert-iae for the asserts. (RM 2015-07-24)
 (defn assert-aspect-attachable [aspect-def thing]
   (assert ((some-fn things.def/aspect?+ things.def/main-aspect?+)
            aspect-def)
-          "proper Aspect definition")
+          "not a proper Aspect definition")
   (when (things.def/main-aspect? aspect-def)
     (assert (= (:ncoords aspect-def)
                (count (:coords thing)))
@@ -67,7 +70,7 @@
           "unfulfilled prerequisites according to aspect")
   (assert ((:name-pred aspect-def)
            (last (:coords thing)))
-          "wrong name according to aspect"))
+          "invalid name according to aspect"))
 
 (defn attach-aspect [aspect-defs aspect-tag thing]
   {:pre [(thing?+ thing)]}

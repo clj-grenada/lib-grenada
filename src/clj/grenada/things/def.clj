@@ -5,9 +5,9 @@
             [schema.core :as s]
             [grenada.schemas :as schemas]))
 
-;;;; Some auxiliary definitions concerning Aspects
+;;;; Some auxiliary definitions concerning Aspects definitions
 
-(def AspectSchema {:name s/Keyword
+(def AspectSchema {:name schemas/NSQKeyword
                    :prereqs-pred schemas/Fn
                    :name-pred schemas/Fn})
 
@@ -15,7 +15,7 @@
                       :name-pred (fn [_] true)})
 
 
-;;;; Tag type definitions for two kinds of Aspects
+;;;; Tag type definitions for two kinds of Aspects definitions
 
 (gt-more/deftag+ main-aspect
                  [name ncoords prereqs-pred name-pred]
