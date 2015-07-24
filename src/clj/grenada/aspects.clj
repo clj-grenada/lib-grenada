@@ -43,9 +43,46 @@
                      (contains? aspects ::t/find))
      :name-pred string?}))
 
+(def fn-def
+  "Definition of the Aspect `::fn`.
+
+  ## Semantics
+
+  A Thing with the Aspect `::fn` describes a **concrete Clojure fn**, that is,
+  an object that satisfies `fn?`.
+
+  ## Prerequisites
+
+  Only `:grenada.things/var-backed` (implying `:grenada.things/find`) can be
+  `::fn`.
+
+  ## Canonical name
+
+  See clj::grenada.aspects/var-backed-def.
+
+  ## Remarks
+
+  Somewhat confusingly, Finds with the Aspect `::fn` can have multiple
+  **different names**. For example, see this:
+
+  ```clojure
+  user=> (def bark (fn miaow [] (throw (Exception. \"🐷 Grunt.\"))))
+  #'user/bark
+  user=> (bark)
+
+  Exception 🐷 Grunt.  user/miaow (NO_SOURCE_FILE:1)
+  user=>                 ; ‾‾‾‾‾
+  ```
+  "
+  (things.def/map->aspect
+    {:name ::fn
+     :prereqs-pred (fn fn-prereqs-fulfilled? [aspects]
+                     (set/subset? #{::t/find ::var-backed} aspects))
+     :name-pred string?}))
+
 
 ;;;; Public API
 
 (def def-for-aspect
   "A map from Aspect keywords to definitions of Aspects in this namespace."
-  (things.def/map-from-defs #{var-backed-def}))
+  (things.def/map-from-defs #{var-backed-def fn-def}))
