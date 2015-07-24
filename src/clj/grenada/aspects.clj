@@ -1,10 +1,14 @@
 (ns grenada.aspects
-  (:require [grenada.things :as t]
+  "Defines the core Aspects provided by Grenada.
+
+  The main Aspects are not defined here, but in `grenada.things`, though."
+  {:grenada.cmeta/bars {:doro.bars/markup-all :common-mark}}
+  (:require [clojure.set :as set]
+            [grenada
+             [things :as t]]
             [grenada.things.def :as things.def]))
 
-(def
-  ^{:grenada.cmeta/bars {:doro.bars/markup :common-mark}}
-  var-backed-def
+(def var-backed-def
   "Definition of the Aspect `::var-backed`.
 
   ## Semantics
