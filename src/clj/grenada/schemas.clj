@@ -13,4 +13,14 @@
 (def NSQKeyword (s/both s/Keyword
                         (s/pred ns-qualified? "has namespace")))
 
+;; REVIEW: Make sure this works as I think it does. Or find a prettier way to do
+;;         it, for that matter. (RM 2015-07-24)
+(def Schema
+  "A schema for Prismatic Schemas."
+  (s/pred (fn [x] (try (s/checker x)
+                       true
+                       (catch Exception _
+                         false)))
+          "Is a valid Prismatic Schema."))
+
 (def Vector (s/pred vector? "a vector"))

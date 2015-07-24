@@ -89,3 +89,24 @@
             (attach-aspect aspect-defs aspect-tag cur-thing))
           thing
           aspect-tags))
+
+
+;;;; Functions for doing stuff with Things and Bars
+
+(defn assert-bar-attachable [bar-type-def thing]
+  (assert (things.def/bar-type?+ bar-type-def) "not a proper Bar definition")
+  (assert ((:aspect-prereqs-pred bar-type-def)
+           (:aspects thing))
+          "unfulfilled Aspect prerequisites according to Bar type")
+  (assert ((:bar-prereqs-pred bar-type-def)
+           (:bars thing))
+          "unfulfilled Bar prerequisites according to Bar type")
+  (assert (not (contains? (:bars thing) (:name bar-type-def)))
+          (str "Bar of type " (:name bar-type-def) " already present")))
+
+(defn attach-bar [bar-type-defs bar-tag bar thing]
+  {:pre [(thing?+ thing)]}
+  (let [bar-type-def (safe-get bar-type-defs bar-tag)]
+    (assert-bar-attachable bar-type-def thing)
+    (things.def/assert-bar-valid bar-type-def bar)
+    (assoc-in thing [:bars bar-tag] bar)))
