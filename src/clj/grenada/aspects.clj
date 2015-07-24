@@ -80,9 +80,31 @@
                      (set/subset? #{::t/find ::var-backed} aspects))
      :name-pred string?}))
 
+(def macro-def
+  "Definition of the Aspect `::macro`.
+
+  ## Semantics
+
+  A Thing with the Aspect `::macro` describes a **concrete Clojure macro*, that
+  is, an object for which `(:macro (meta (var <object>))` evaluates to `true`.
+
+  ## Prerequisites
+
+  Only `:grenada.things/var-backed` (implying `:grenada.things/find`) can be
+  `::macro`.
+
+  ## Canonical name
+
+  See clj::grenada.aspects/var-backed-def."
+  (things.def/map->aspect
+    {:name ::macro
+     :prereqs-pred (fn macro-prereqs-fulfilled? [aspects]
+                     (set/subset? #{::t/find ::var-backed} aspects))
+     :name-pred string?}))
+
 
 ;;;; Public API
 
 (def def-for-aspect
   "A map from Aspect keywords to definitions of Aspects in this namespace."
-  (things.def/map-from-defs #{var-backed-def fn-def}))
+  (things.def/map-from-defs #{var-backed-def fn-def macro-def}))
