@@ -10,7 +10,16 @@
 
 ;;;; Miscellaneous helpers
 
-(defn- coords->path [coords]
+(defn- coords->path
+  "Returns a File with a relative path from the given coords. The result can be
+  used to store a Thing on disk, for example.
+
+  Note that Grimoire only munges the Def coordinate (Find in Grenada), whereas
+  this munges all. The result are quite ugly paths with version strings looking
+  like '1%2E6%2E0'. However, weird characters might occur in almost all
+  coordinates, so I don't understand why we should limit munging to the Def
+  coordinate."
+  [coords]
   (apply io/file (map grimoire.util/munge coords)))
 
 
