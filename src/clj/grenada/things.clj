@@ -93,6 +93,12 @@
           thing
           aspect-tags))
 
+;; MAYBE TODO: Add has-aspect?+, which also checks if the predicates defined by
+;;             the Aspect's are fulfilled. (RM 2015-07-26)
+(defn has-aspect? [aspect-tag thing]
+  {:pre [(thing?+ thing)]}
+  (contains? (:aspects thing) aspect-tag))
+
 
 ;;;; Functions for doing stuff with Things and Bars
 
