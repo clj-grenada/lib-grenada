@@ -13,7 +13,7 @@
 
 (defn- out-jar [{:keys [artifact version]}]
   {:pre [artifact version]}
-  (io/file (str artifact "-" version "-metadata.jar")))
+  (io/file (str artifact "-" version "-datadoc.jar")))
 
 
 ;;;; Miscellaneous helpers
@@ -52,7 +52,7 @@
 (defn deploy-jar [{artifact :name :keys [group version] :as coords} out-dir
                   [u p]]
   (aether/deploy
-    :coordinates [(symbol group artifact) version :classifier "metadata"]
+    :coordinates [(symbol group artifact) version :classifier "datadoc"]
     :jar-file (io/file out-dir (out-jar coords))
     :pom-file (io/file out-dir "pom.xml")
     :repository {"clojars" {:url "https://clojars.org/repo"
