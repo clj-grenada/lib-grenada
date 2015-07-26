@@ -26,7 +26,7 @@
 
 ;; TODO: Correct problems with relative paths. .getParentFile only works with
 ;;       files that have more than one segment. However, when I converted to an
-;;       absolute filename, it .relativizePath complained that "other" was a
+;;       absolute filename, .relativizePath complained that "other" was a
 ;;       different type of path. (RM 2015-06-24)
 (defn jar-from-files
   "Takes the Grenada data from IN-DIR and packages them up in a JAR. Also
