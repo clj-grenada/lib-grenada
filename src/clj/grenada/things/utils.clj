@@ -3,6 +3,7 @@
   guten-tag.core/ATaggedVals."
   (:refer-clojure :exclude [select-keys conj])
   (:require [clojure.core :as clj]
+            grenada.utils
             [plumbing
              [core :as plumbing]
              [map :as map]]
@@ -37,3 +38,6 @@
 
 (defn safe-get [[t v] k]
   (plumbing/safe-get v k))
+
+(defn safe-select-keys [[t v] ks]
+  (grenada.utils/safe-select-keys v ks))
