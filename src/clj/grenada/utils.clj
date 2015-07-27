@@ -1,6 +1,6 @@
 (ns grenada.utils
   "Miscellaneous utilities."
-  (:require plumbing.core))
+  (:require [plumbing.core :refer [safe-get]]))
 
 (defn warn [& args]
   (binding [*out* *err*] (apply println "WARNING! "args)))
@@ -36,3 +36,8 @@
     (0 1 2 4 5)"
   [n coll]
   (concat (take n coll) (drop (inc n) coll)))
+
+(defn safe-select-keys
+  "Analogy: get:safe-get :: select-keys:safe-select-keys"
+  [m ks]
+  (plumbing.core/map-from-keys #(safe-get m %) ks))

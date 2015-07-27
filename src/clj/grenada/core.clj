@@ -6,7 +6,6 @@
             [darkestperu.jar :as jar]
             [plumbing.core :refer [safe-get]]
             [grenada.config :refer [config]]
-            [grenada.reading :as reading]
             grimoire.util
             [leiningen.pom :as pom]))
 
@@ -14,7 +13,7 @@
 
 (defn- out-jar [{:keys [artifact version]}]
   {:pre [artifact version]}
-  (io/file (str artifact "-" version "-metadata.jar")))
+  (io/file (str artifact "-" version "-datadoc.jar")))
 
 
 ;;;; Miscellaneous helpers
@@ -23,25 +22,11 @@
   (filter #(.isFile %) (file-seq fl)))
 
 
-;;;; A predicate (to be made redundant by Guten-tag)
-
-(defn def? [m]
-  (= (safe-get m :level) :grimoire.things/def))
-
-
-;;;; A source
-
-;; TODO: Support reading from JARs. (RM 2015-06-19)
-(defn read-metadata [where-to-look]
-  (mapcat #(reading/read-string (slurp %))
-          (ord-file-seq (io/file where-to-look))))
-
-
 ;;;; Postprocessors (public API)
 
 ;; TODO: Correct problems with relative paths. .getParentFile only works with
 ;;       files that have more than one segment. However, when I converted to an
-;;       absolute filename, it .relativizePath complained that "other" was a
+;;       absolute filename, .relativizePath complained that "other" was a
 ;;       different type of path. (RM 2015-06-24)
 (defn jar-from-files
   "Takes the Grenada data from IN-DIR and packages them up in a JAR. Also
@@ -67,7 +52,7 @@
 (defn deploy-jar [{artifact :name :keys [group version] :as coords} out-dir
                   [u p]]
   (aether/deploy
-    :coordinates [(symbol group artifact) version :classifier "metadata"]
+    :coordinates [(symbol group artifact) version :classifier "datadoc"]
     :jar-file (io/file out-dir (out-jar coords))
     :pom-file (io/file out-dir "pom.xml")
     :repository {"clojars" {:url "https://clojars.org/repo"
