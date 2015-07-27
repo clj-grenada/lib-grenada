@@ -10,7 +10,16 @@
 
 ;;;; Miscellaneous helpers
 
-(defn- coords->path [coords]
+(defn- coords->path
+  "Returns a File with a relative path from the given coords. The result can be
+  used to store a Thing on disk, for example.
+
+  Note that Grimoire only munges the Def coordinate (Find in Grenada), whereas
+  this munges all. The result are quite ugly paths with version strings looking
+  like '1%2E6%2E0'. However, weird characters might occur in almost all
+  coordinates, so I don't understand why we should limit munging to the Def
+  coordinate."
+  [coords]
   (apply io/file (map grimoire.util/munge coords)))
 
 
@@ -47,16 +56,15 @@
 (defn fs-flat [data out-file]
   (prn-spit out-file data))
 
-;; TODO: Always start a new line for the extensions map as well as existing
-;;       extensions. Example:
+;; TODO: Always start a new line for the Bars map as well as existing Bars.
+;;       Example:
 ;;
-;;         {:name …
-;;          :coords …
-;;          :level …
-;;          :extensions
-;;          {:extension1
+;;         {:coords …
+;;          :aspects …
+;;          :bars
+;;          {:bar1
 ;;           …
-;;           :extension2
+;;           :bar2
 ;;           …
 ;;           …}}
 ;;
@@ -72,8 +80,7 @@
     (throw (IllegalStateException.
              (str out-file " already exists. You might not want me to"
                   " overwrite it."))))
-  (let [thing-symbols (plumbing/for-map [t t/thing-tags]
-                        t print-ataggedval)]
-    (with-open [w (io/writer out-file)]
-      (binding [*out* w]
-        (fipp.edn/pprint data {:symbols thing-symbols})))))
+  (with-open [w (io/writer out-file)]
+    (binding [*out* w]
+      (fipp.edn/pprint data {:symbols {::t/thing print-ataggedval}}))))
+                             ; In project.clj I menat this :symbols entry.
