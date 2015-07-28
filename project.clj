@@ -16,7 +16,7 @@
                  ;; changed and potentially adjust
                  ;; grenada.core/print-ataggedval.
                  [me.arrdem/guten-tag "0.1.4"]
-                 [org.clojure-grimoire/lib-grimoire "0.9.2"]
+                 [org.clojure-grimoire/lib-grimoire "0.10.2"]
 
                  ;; WARNING: I'm using features of Fipp that are ‘subject to
                  ;;          change’ according to Fipp's README.
