@@ -1,8 +1,5 @@
 (ns grenada.exporters
   (:require [clojure.java.io :as io]
-            [clojure.pprint :as pprint]
-            fipp.edn
-            fipp.visit
             [plumbing.core :as plumbing :refer [safe-get]]
             grimoire.util
             [grenada.config :refer [config]]
@@ -29,12 +26,6 @@
   (with-open [writer (io/writer path)]
     (binding [*out* writer] (prn x))))
 
-;; TODO: Connect this to what is defined in guten-tag. – Currently we're just
-;;       copying the 'g/t and when it changes, we have a problem.
-(defn print-ataggedval [edn-pr [t m]]
-  (fipp.visit/visit-tagged edn-pr {:tag 'g/t
-                                   :form [t m]}))
-
 
 ;;;; Hierarchical filesystem exporter
 
@@ -56,31 +47,4 @@
 (defn fs-flat [data out-file]
   (prn-spit out-file data))
 
-;; TODO: Always start a new line for the Bars map as well as existing Bars.
-;;       Example:
-;;
-;;         {:coords …
-;;          :aspects …
-;;          :bars
-;;          {:bar1
-;;           …
-;;           :bar2
-;;           …
-;;           …}}
-;;
-;;       (RM 2015-06-21)
-(defn pprint-fs-flat
-  "
-
-  Defaults to not overwriting, since something pprint-ed is likely to be edited
-  as external metadata and the user would be very sad if she accidentally had
-  her wonderful hand-crafted examples wiped out."
-  [data out-file & [?overwrite]]
-  (when (and (not ?overwrite) (.exists (io/as-file out-file)))
-    (throw (IllegalStateException.
-             (str out-file " already exists. You might not want me to"
-                  " overwrite it."))))
-  (with-open [w (io/writer out-file)]
-    (binding [*out* w]
-      (fipp.edn/pprint data {:symbols {::t/thing print-ataggedval}}))))
-                             ; In project.clj I menat this :symbols entry.
+;;; See also grenada.exporters.pretty.

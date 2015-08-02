@@ -72,12 +72,14 @@
            (last (:coords thing)))
           "invalid name according to aspect"))
 
+
+;; TODO: When everyone is on Clojure ≧ 1.7.0, use update. (RM 2015-07-29)
 (defn attach-aspect [aspect-defs aspect-tag thing]
   {:pre [(thing?+ thing)]}
   (let [aspect-def (safe-get aspect-defs aspect-tag)]
     (assert-aspect-attachable aspect-def thing)
-    (update thing :aspects
-            #(conj % (:name aspect-def)))))
+    (update-in thing [:aspects]
+               #(conj % (:name aspect-def)))))
 
 (defn attach-aspects
   "Attaches all Aspects indicated by ASPECT-TAGS to THING using
