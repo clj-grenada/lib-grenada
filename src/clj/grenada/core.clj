@@ -13,7 +13,10 @@
 
 (defn- out-jar [{:keys [artifact version]}]
   {:pre [artifact version]}
-  (io/file (str artifact "-" version "-datadoc.jar")))
+  (io/file (format "%s-%s-%s.jar"
+                   artifact
+                   version
+                   (safe-get config :classifier))))
 
 
 ;;;; Miscellaneous helpers
@@ -47,12 +50,12 @@
     (jar/make-jar jar-path {:manifest-version "1.0"}
                   (conj files-map [pom-path pom-in-jar]))))
 
-;; TODO: If we're staying with Grenada, change classifier to "grenadata". (RM
-;;       2015-06-23)
 (defn deploy-jar [{artifact :name :keys [group version] :as coords} out-dir
                   [u p]]
   (aether/deploy
-    :coordinates [(symbol group artifact) version :classifier "datadoc"]
+    :coordinates [(symbol group artifact)
+                  version
+                  :classifier (safe-get config :classifier)]
     :jar-file (io/file out-dir (out-jar coords))
     :pom-file (io/file out-dir "pom.xml")
     :repository {"clojars" {:url "https://clojars.org/repo"
