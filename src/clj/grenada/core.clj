@@ -47,7 +47,9 @@
                                   [p (jar/relativize-path in-dir-parent p)])
                                 files))]
     (io/make-parents pom-path) ; Also takes care of parents for JAR file.
-    (spit pom-path (pom/make-pom coords-out))
+    (spit pom-path (-> coords-out
+                       (assoc :name artifact) ; Because we're going back to lein
+                       pom/make-pom))
     (jar/make-jar jar-path {:manifest-version "1.0"}
                   (conj files-map [pom-path pom-in-jar]))))
 
