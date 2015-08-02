@@ -11,7 +11,8 @@
 
 ;;;; Pseudo config
 
-(defn- out-jar [{:keys [artifact version]}]
+;; TODO: Find a better place for this. (RM 2015-08-02)
+(defn jar-name [artifact version]
   {:pre [artifact version]}
   (io/file (format "%s-%s-%s.jar"
                    artifact
@@ -36,7 +37,7 @@
   creates a pom.xml with Maven coordinates from COORDS-OUT. Writes JAR and
   pom.xml to OUT-DIR."
   [in-dir out-dir {:keys [group artifact version] :as coords-out}]
-  (let [jar-path (io/file out-dir (out-jar coords-out))
+  (let [jar-path (io/file out-dir (jar-name artifact version))
         pom-path (io/file out-dir "pom.xml")
         pom-in-jar (io/file "META-INF" "maven" group artifact "pom.xml")
         in-dir-file (io/as-file in-dir)
@@ -56,7 +57,7 @@
     :coordinates [(symbol group artifact)
                   version
                   :classifier (safe-get config :classifier)]
-    :jar-file (io/file out-dir (out-jar coords))
+    :jar-file (io/file out-dir (jar-name artifact version))
     :pom-file (io/file out-dir "pom.xml")
     :repository {"clojars" {:url "https://clojars.org/repo"
                             :username u
