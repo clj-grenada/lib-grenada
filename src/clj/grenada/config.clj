@@ -4,7 +4,9 @@
 ;;; TODO: Make these things configurable from the outside. (RM 2015-06-19)
 
 (def config
-  { :datafile-name "data.edn"
+  {:classifier "datadoc"
+
+   :datafile-name "data.edn"
 
    ;; Credits: https://github.com/boot-clj/boot/blob/c244cc6cffea48ce2912706567b3bc41a4d387c7/boot/aether/src/boot/aether.clj
    :default-repositories
