@@ -7,6 +7,8 @@
                  [leiningen "2.5.1"] ; Sorry for the strange dependency.
                                      ; TODO: Think about librarizing the
                                      ;       required code. (RM 2015-06-27)
+                 [medley "0.6.0"]
+                    ; Bump once Leiningen runs on Clojure 1.7.0.
                  [org.projectodd.shimdandy/shimdandy-api "1.1.0"]
                  [org.projectodd.shimdandy/shimdandy-impl "1.1.0"]
                  [org.clj-grenada/darkestperu "0.1.1"]
