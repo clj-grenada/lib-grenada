@@ -25,10 +25,10 @@
 
   ## Model
 
-  This Bar allows attaching arbitrary key-value data to a Thing. It is thought
-  for intermediate processing steps. As it provides no guarantees about its
-  contents, it should only be present within short distance of consumption, i.
-  e. not in final Grenada artifacts.
+  This Bar allows attaching **arbitrary key-value** data to a Thing. It is
+  thought for intermediate processing steps. As it provides no **guarantees**
+  about its contents, it should only be present within short distance of
+  consumption, i. e. not in **final Grenada artifacts**.
 
   ## Prerequisites
 
