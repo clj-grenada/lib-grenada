@@ -96,6 +96,34 @@
                                    #{::a/fn ::a/macro ::a/special}))))
      :schema [(s/either s/Vector [s/Any])]}))
 
+(def access-def
+  "Definition of the Bar type `::access`.
+
+  ## Model
+
+  A Bar of this type holds information about whether a Find is private or not
+  and about whether it is dynamic or static.
+
+   - `:private` – If `true`, the concrete find described by the Find can only be
+     accessed from within the namespace where it is defined or through [special
+     incantations](http://dev.clojure.org/display/community/Library+Coding+Standards)
+     (see also
+     [here](https://groups.google.com/d/topic/clojure/Mi277rszUs0/discussion)).
+     If `false`, the concrete find can be accessed from anywhere.
+
+   - `:dynamic` – If `true`, the concrete find is dynamic. See the [Clojure
+     docs](http://clojure.org/vars) for what this means. If `false`, it is
+     static.
+
+  ## Prerequisites
+
+  Can only be attached to var-backed Finds."
+  (things.def/map->bar-type
+    {:name ::access
+     :aspect-prereqs-pred #(set/subset #{::t/find ::a/var-backed} %)
+     :schema {:private s/Bool
+              :dynamic s/Bool}}))
+
 (def lifespan-def
   "Definition of the Bar type `::lifespan`.
 
@@ -144,5 +172,6 @@
   (things.def/map-from-defs #{any-def
                               doc-def
                               calling-def
+                              access-def
                               lifespan-def
                               source-location-def}))
