@@ -168,10 +168,32 @@
                              :schema {:file s/Str
                                       :line s/Int}}))
 
+(def author-def
+  "Definition of the Bar type `::author`.
+
+  ## Model
+
+  A Bar of this type indicates the author of a namespace. It corresponds to the
+  `:author` Cmetadata added to namespaces in core Clojure.
+
+  ## Prerequisites
+
+  Can only be added to Namespace Things.
+
+  ## Remarks
+
+  The `:author` Cmetadata seems silly to me. Often there is a bunch of people
+  working on one namespace and not only one author. So this Bar is just for
+  completeness."
+  (things.def/map->bar-type {:name ::author
+                             :aspect-prereqs-pred #(contains? % ::t/namespace)
+                             :valid-pred string?}))
+
 (def def-for-bar-type
   (things.def/map-from-defs #{any-def
                               doc-def
                               calling-def
                               access-def
                               lifespan-def
-                              source-location-def}))
+                              source-location-def
+                              author-def}))
