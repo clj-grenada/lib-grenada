@@ -17,7 +17,9 @@
    - `:test`        – Doesn't occur in `clojure.core` and right now I don't know
                       how to handle it. Also not so important."
   {:grenada.cmeta/bars {:doro.bars/markup-all :common-mark}}
-  (:require [grenada.things.def :as things.def]
+  (:require [clojure.set :as set]
+            [grenada.aspects :as a]
+            [grenada.things.def :as things.def]
             [schema.core :as s]))
 
 (def any-def
@@ -61,6 +63,38 @@
                              (fn doc-aspect-prereqs-fulfilled? [aspects]
                                (some #(t/below-incl ::t/namespace %) aspects))
                              :valid-pred string?}))
+
+(def calling-def
+  "Definition of the Bar type `::calling`.
+
+  ## Model
+
+  A Bar of this type holds the **arglists** of a fn or macro or the **forms** of
+  a special form.
+
+  ## Prerequisites
+
+  Can only be attached to Finds with one of the Aspects `:grenada.aspects/fn`,
+  `:grenada.aspects/macro`, `:grenada.aspects/special`.
+
+  ## Remarks
+
+  - The **name** is a bit silly. However, to me it doesn't make sense to have a
+    different Bar for the few **special forms** that have `:forms` instead of
+    `:arglists` Cmetadata. If you think it does make sense, please send me a
+    message and we'll discuss it.
+
+  - The **schema** is not very rigorous. We can be pretty sure that it is a
+    sequence of vectors (for fns and macros) or a sequence of sequences (for
+    special forms), but other than that, users might put anything in there."
+  (things.def/map->bar-type
+    {:name ::doc
+     :aspect-prereqs-pred
+     (fn calling-aspect-prereqs-fulfilled [aspects]
+       (and (contains? aspects ::t/find)
+            (seq (set/intersection aspects
+                                   #{::a/fn ::a/macro ::a/special}))))
+     :schema [(s/either s/Vector [s/Any])]}))
 
 (def lifespan-def
   "Definition of the Bar type `::lifespan`.
@@ -109,5 +143,6 @@
 (def def-for-bar-type
   (things.def/map-from-defs #{any-def
                               doc-def
+                              calling-def
                               lifespan-def
                               source-location-def}))
