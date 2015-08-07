@@ -33,6 +33,8 @@
 ;;       absolute filename, .relativizePath complained that "other" was a
 ;;       different type of path. (RM 2015-06-24)
 ;; TODO: Find a better place for this. (RM 2015-08-02)
+;; TODO: Document the feature that one can pass additional entries for the POM
+;;       file in coords-out. (RM 2015-08-07)
 (defn jar-from-files
   "Takes the Grenada data from IN-DIR and packages them up in a JAR. Also
   creates a pom.xml with Maven coordinates from COORDS-OUT. Writes JAR and
