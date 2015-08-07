@@ -20,5 +20,31 @@
   (things.def/map->bar-type {:name ::any
                              :schema {s/Keyword s/Any}}))
 
+(def doc-def
+  "Definition of the Bar type `::doc`.
+
+  ## Model
+
+  A Bar of this type holds the **doc string** attached to a Thing in the normal
+  Clojure way. If a concrete thing doesn't support attaching doc strings in the
+  normal Clojure way (eg. deftypes, defmethods), Bars of this type may be used
+  as a **substitute**.
+
+  ## Prerequisites
+
+  Can only be attached to Namespaces and Finds.
+
+  ## Remarks
+
+  This Bar type is really only for standard Clojure docstrings and for working
+  around the lack of docstring support. If you want to **supplement** docstrings
+  of Namespaces and Finds or want to add documentation to Groups, Artifacts,
+  Versions or Platforms, please use a different Bar type."
+  (things.def/map->bar-type {:name ::doc
+                             :aspect-prereqs-pred
+                             (fn doc-def-aspect-prereqs-fulfilled? [aspects]
+                               (some #(t/below-incl ::t/namespace %) aspects))
+                             :valid-pred string?}))
+
 (def def-for-bar-type
-  (things.def/map-from-defs #{any-def}))
+  (things.def/map-from-defs #{any-def doc-def}))
