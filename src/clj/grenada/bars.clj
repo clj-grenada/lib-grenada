@@ -1,5 +1,21 @@
 (ns grenada.bars
-  "Defines a few Bar types that are shipped with lib-grenada."
+  "Defines a few Bar types that are shipped with lib-grenada.
+
+  Most of them are made to accommodate the **Cmetadata** added to concrete
+  things in clojure.core, which are likely being imitated by other code. The
+  descriptions of **semantics** I give are my own interpretations of the usually
+  sparse information provided by the Clojure documentation.
+
+  **No Bars** are defined for the following Cmetadata entries commonly found on
+  Clojure things:
+
+   - `:name`, `:ns` – Already contained in the coordinates.
+   - `:macro`       – Already conveyed by an Aspect.
+   - `:static`      – This is the default since Clojure 1.very-early.
+   - `:tag`         – Might be an Object and therefore difficult. Not so
+                      important for humans anyway. (Correct me if I'm wrong.)
+   - `:test`        – Doesn't occur in `clojure.core` and right now I don't know
+                      how to handle it. Also not so important."
   {:grenada.cmeta/bars {:doro.bars/markup-all :common-mark}}
   (:require [grenada.things.def :as things.def]
             [schema.core :as s]))
