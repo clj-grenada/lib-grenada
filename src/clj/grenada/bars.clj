@@ -79,11 +79,35 @@
 
   Can only be attached to Finds."
   (things.def/map->bar-type {:name ::lifespan
-                             :aspect-prereqs-pred
-                             (fn lifespan-aspect-prereqs-fulfilled? [aspects]
-                               (contains? aspects ::t/find))
+                             :aspect-prereqs-pred #(contains? % ::t/find)
                              :schema {:added s/Str
                                       :deprecated (s/either s/Str nil)}}))
 
+(def source-location-def
+  "Definition of the Bar type `::source-location`.
+
+  ## Model
+
+  A Bar of this type holds information about where a Find is located in **source
+  code**.
+
+   - `:file` is the file the Find can be found in. This corresponds to the
+     `:file` Cmetadata [attached](http://clojure.org/special_forms) by the
+     Clojure compiler. It is a relative path and might therefore not be easy to
+     interpret. More helpful Bars might be able to provide URLs.
+
+   - `:line` is the line in the `:file` where the definition of the Find starts.
+
+  ## Prerequisites
+
+  Can only be attached to Finds."
+  (things.def/map->bar-type {:name ::source-location
+                             :aspect-prereqs-pred #(contains? % ::t/find)
+                             :schema {:file s/Str
+                                      :line s/Int}}))
+
 (def def-for-bar-type
-  (things.def/map-from-defs #{any-def doc-def lifespan-def}))
+  (things.def/map-from-defs #{any-def
+                              doc-def
+                              lifespan-def
+                              source-location-def}))
