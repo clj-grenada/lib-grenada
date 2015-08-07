@@ -42,7 +42,7 @@
   Versions or Platforms, please use a different Bar type."
   (things.def/map->bar-type {:name ::doc
                              :aspect-prereqs-pred
-                             (fn doc-def-aspect-prereqs-fulfilled? [aspects]
+                             (fn doc-aspect-prereqs-fulfilled? [aspects]
                                (some #(t/below-incl ::t/namespace %) aspects))
                              :valid-pred string?}))
 
@@ -64,7 +64,7 @@
   Can only be attached to Finds."
   (things.def/map->bar-type {:name ::lifespan
                              :aspect-prereqs-pred
-                             (fn lifespan-def-asp-prereqs-fulfilled? [aspects]
+                             (fn lifespan-aspect-prereqs-fulfilled? [aspects]
                                (contains? aspects ::t/find))
                              :schema {:added s/Str
                                       :deprecated (s/either s/Str nil)}}))
