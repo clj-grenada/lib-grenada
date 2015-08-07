@@ -46,5 +46,28 @@
                                (some #(t/below-incl ::t/namespace %) aspects))
                              :valid-pred string?}))
 
+(def lifespan-def
+  "Definition of the Bar type `::lifespan`.
+
+  ## Model
+
+  A Bar of this type holds information on when a Find was **added** and,
+  possibly, **deprecated**.
+
+   - `:added` is the version in which a Thing first occured in the project.
+
+   - `:deprecated` is the version in which a Thing was first deprecated. If it
+     is `nil`, the Thing is not deprecated.
+
+  ## Prerequisites
+
+  Can only be attached to Finds."
+  (things.def/map->bar-type {:name ::lifespan
+                             :aspect-prereqs-pred
+                             (fn lifespan-def-asp-prereqs-fulfilled? [aspects]
+                               (contains? aspects ::t/find))
+                             :schema {:added s/Str
+                                      :deprecated (s/either s/Str nil)}}))
+
 (def def-for-bar-type
-  (things.def/map-from-defs #{any-def doc-def}))
+  (things.def/map-from-defs #{any-def doc-def lifespan-def}))
