@@ -20,6 +20,11 @@
                  {:aspects #{}
                   :bars {}})
 
+(defn vec->thing [[tag m]]
+  (let [thing (gt/->ATaggedVal tag m)]
+    (assert (thing?+ thing))
+    thing))
+
 
 ;;;; Definitions of the main aspects
 
