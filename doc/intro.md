@@ -1,6 +1,52 @@
-# Introduction to grenada-lib
+# The case of Dorothy the Documenter
 
-TODO: write [great documentation](http://jacobian.org/writing/what-to-write/)
+(If you've found this part of the documentation by chance, but aren't sure
+whether it is what you're looking for, go to the [overview](overview.md).)
+
+If you've read the Clojure Gazette interview about lib-grenada during the Google
+Summer of Code, you already know Dorothy the Documenter and her quest. This here
+is a tutorial that guides you through the steps she would take. If you don't
+know Dorothy the Documenter: in this tutorial I'll show you how to build a
+Datadoc JAR with beginner documentation for the fns and variables in
+`clojure.core`.
+
+## Step 1: Get a Datadoc JAR and look what's in there
+
+A Datadoc JAR is a JAR file with data documenting some Clojure code. To start
+off, create a Leiningen project and add the newest lib-grenada to the dependency
+list in project.clj. Change the Clojure version to 1.7.0. Then start your
+favourite environment for evaluating Clojure code (probably some sort of REPL).
+
+Evaluate the following. It will download a Datadoc JAR with documentation for
+the core Clojure namespaces and read in the data.
+
+```clojure
+(require '[grenada.sources :as gr-sources])
+
+(def data (gr-sources/from-depspec '[org.clojars.rmoehn/clojure "1.7.0+001"
+                                     :classifier "datadoc"]))
+```
+
+You see that Datadoc JARs are specified in the same way as Leiningen
+dependencies, which in turn are based on Maven coordinates. Now have a look
+at the data.
+
+```clojure
+(require '[grenada.exporters.pretty :as e]
+         '[grenada.converters :as gr-converters])
+
+(def data-map (gr-converters/to-mapping data))
+
+(e/pprint (get data-map ["org.clojure"]))
+(e/pprint (get data-map ["org.clojure" "clojure"]))
+(e/pprint (get data-map ["org.clojure" "clojure" "1.7.0"]))
+(e/pprint (get data-map ["org.clojure" "clojure" "1.7.0" "clj"]))
+(e/pprint (get data-map ["org.clojure" "clojure" "1.7.0" "clj" "clojure.core"]))
+(e/pprint (get data-map ["org.clojure" "clojure" "1.7.0" "clj" "clojure.core" "concat"]))
+```
+
+
+
 
  - What should the reader be able to do?
      - Understand the Grenada format.
@@ -66,6 +112,7 @@ TODO: write [great documentation](http://jacobian.org/writing/what-to-write/)
          (Please do, it's part of my concept.*
          *http://devchat.tv/freelancers/164-fs-teaching-and-learning-courses-wit-breanne-dyck
          (but can't find the original study :-().
+       - Also play around with data and data-map.
        - ✰ Now read the spec. (Only link, not the word "spec"!)
      - Checkpoint: by now you should have understood that we're dealing with
        Things. They have coordinates that link them to concrete Clojure Things.
