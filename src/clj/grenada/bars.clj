@@ -10,6 +10,7 @@
   Clojure things:
 
    - `:name`, `:ns` – Already contained in the coordinates.
+   - `:column`      – Don't know what that should be good for.
    - `:macro`       – Already conveyed by an Aspect.
    - `:static`      – This is the default since Clojure 1.very-early.
    - `:tag`         – Might be an Object and therefore difficult. Not so
