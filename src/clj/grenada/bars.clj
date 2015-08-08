@@ -65,7 +65,8 @@
   (things.def/map->bar-type {:name ::doc
                              :aspect-prereqs-pred
                              (fn doc-aspect-prereqs-fulfilled? [aspects]
-                               (some #(t/below-incl? ::t/namespace %) aspects))
+                               (t/below-incl? ::t/namespace
+                                              (t/pick-main-aspect aspects)))
                              :valid-pred string?}))
 
 (def calling-def
