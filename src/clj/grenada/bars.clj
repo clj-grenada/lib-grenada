@@ -148,9 +148,13 @@
 
   Can only be attached to Finds."
   (things.def/map->bar-type {:name ::lifespan
-                             :aspect-prereqs-pred #(contains? % ::t/find)
-                             :schema {:added s/Str
-                                      :deprecated (s/either s/Str nil)}}))
+                             :aspect-prereqs-pred
+                             (fn lifespan-aspect-prereqs-fulfilled? [aspects]
+                               (t/below-incl? ::t/namespace
+                                              (t/pick-main-aspect aspects)))
+
+                             :schema {:added (s/maybe s/Str)
+                                      :deprecated (s/maybe s/Str)}}))
 
 (def source-location-def
   "Definition of the Bar type `::source-location`.
