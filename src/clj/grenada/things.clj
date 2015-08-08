@@ -177,3 +177,13 @@
     (assert-bar-attachable bar-type-def thing)
     (things.def/assert-bar-valid bar-type-def bar)
     (assoc-in thing [:bars bar-tag] bar)))
+
+(defn attach-bars [bar-type-defs tags-and-bars thing]
+  (reduce (fn attach-bars-redfn [cur-thing [bar-tag bar]]
+            (attach-bar bar-type-defs bar-tag bar cur-thing))
+          thing
+          tags-and-bars))
+
+(defn detach-bar [bar-tag thing]
+  {:pre [(thing?+ thing) (contains? (:bars thing) bar-tag)]}
+  (gr-utils/dissoc-in* thing [:bars bar-tag]))
