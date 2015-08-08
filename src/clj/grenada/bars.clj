@@ -89,17 +89,18 @@
     `:arglists` Cmetadata. If you think it does make sense, please send me a
     message and we'll discuss it.
 
-  - The **schema** is not very rigorous. We can be pretty sure that it is a
+  - The **schema** is not very rigorous. We can't even be sure that it is a
     sequence of vectors (for fns and macros) or a sequence of sequences (for
-    special forms), but other than that, users might put anything in there."
+    special forms), because there are some cases in the core Clojure namespaces
+    which violate that."
   (things.def/map->bar-type
-    {:name ::doc
+    {:name ::calling
      :aspect-prereqs-pred
      (fn calling-aspect-prereqs-fulfilled [aspects]
        (and (contains? aspects ::t/find)
             (seq (set/intersection aspects
                                    #{::a/fn ::a/macro ::a/special}))))
-     :schema [(s/either schemas/Vector [s/Any])]}))
+     :schema [s/Any]}))
 
 (def access-def
   "Definition of the Bar type `::access`.
