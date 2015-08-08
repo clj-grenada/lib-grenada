@@ -18,7 +18,10 @@
                       how to handle it. Also not so important."
   {:grenada.cmeta/bars {:doro.bars/markup-all :common-mark}}
   (:require [clojure.set :as set]
-            [grenada.aspects :as a]
+            [grenada
+             [aspects :as a]
+             [schemas :as schemas]
+             [things :as t]]
             [grenada.things.def :as things.def]
             [schema.core :as s]))
 
@@ -61,7 +64,7 @@
   (things.def/map->bar-type {:name ::doc
                              :aspect-prereqs-pred
                              (fn doc-aspect-prereqs-fulfilled? [aspects]
-                               (some #(t/below-incl ::t/namespace %) aspects))
+                               (some #(t/below-incl? ::t/namespace %) aspects))
                              :valid-pred string?}))
 
 (def calling-def
@@ -94,7 +97,7 @@
        (and (contains? aspects ::t/find)
             (seq (set/intersection aspects
                                    #{::a/fn ::a/macro ::a/special}))))
-     :schema [(s/either s/Vector [s/Any])]}))
+     :schema [(s/either schemas/Vector [s/Any])]}))
 
 (def access-def
   "Definition of the Bar type `::access`.
@@ -120,7 +123,7 @@
   Can only be attached to var-backed Finds."
   (things.def/map->bar-type
     {:name ::access
-     :aspect-prereqs-pred #(set/subset #{::t/find ::a/var-backed} %)
+     :aspect-prereqs-pred #(set/subset? #{::t/find ::a/var-backed} %)
      :schema {:private s/Bool
               :dynamic s/Bool}}))
 
