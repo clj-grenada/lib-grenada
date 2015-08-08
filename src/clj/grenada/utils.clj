@@ -41,3 +41,6 @@
   "Analogy: get:safe-get :: select-keys:safe-select-keys"
   [m ks]
   (plumbing.core/map-from-keys #(safe-get m %) ks))
+
+(defn keyset [m]
+  (set (keys m)))
