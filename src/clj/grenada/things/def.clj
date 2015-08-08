@@ -2,7 +2,9 @@
   (:require [plumbing.core :as plumbing :refer [safe-get]]
             [guten-tag.core :as gt]
             [grenada.guten-tag.more :as gt-more]
-            [schema.core :as s]
+            [schema
+             [core :as s]
+             [macros :refer [assert!]]]
             [grenada.schemas :as schemas]))
 
 ;;;; Some auxiliary definitions concerning Aspects definitions
@@ -47,7 +49,9 @@
 (defn assert-bar-valid [bar-type bar]
   (assert (bar-type?+ bar-type) "improper Bar type definition")
   (s/validate (:schema bar-type) bar)
-  (assert ((:valid-pred bar-type) bar) "invalid Bar according to Bar type"))
+  (assert! ((:valid-pred bar-type) bar)
+           "invalid Bar %s according to Bar type %s"
+           bar bar-type))
 
 ;;;; Helper function for working with Aspects
 
