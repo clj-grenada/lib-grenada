@@ -158,11 +158,13 @@
 
 ;;;; Functions for doing stuff with Things and Bars
 
+;; TODO: Add better diagnostics to the other asserts. (RM 2015-08-08)
 (defn assert-bar-attachable [bar-type-def thing]
   (assert (things.def/bar-type?+ bar-type-def) "not a proper Bar definition")
-  (assert ((:aspect-prereqs-pred bar-type-def)
-           (:aspects thing))
-          "unfulfilled Aspect prerequisites according to Bar type")
+  (assert! ((:aspect-prereqs-pred bar-type-def)
+            (:aspects thing))
+           "unfulfilled Aspect prerequisites on %s according to Bar type def %s"
+           (pr-str thing) (pr-str bar-type-def))
   (assert ((:bar-prereqs-pred bar-type-def)
            (:bars thing))
           "unfulfilled Bar prerequisites according to Bar type")
