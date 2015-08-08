@@ -132,7 +132,8 @@
   A Bar of this type holds information on when a Find was **added** and,
   possibly, **deprecated**.
 
-   - `:added` is the version in which a Thing first occured in the project.
+   - `:added` is the version in which a Thing first occurred in the project. If
+     it is `nil`, it is unknown when the Thing first occurred.
 
    - `:deprecated` is the version in which a Thing was first deprecated. If it
      is `nil`, the Thing is not deprecated.
