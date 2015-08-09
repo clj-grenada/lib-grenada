@@ -10,26 +10,36 @@ know Dorothy the Documenter: in this tutorial I'll show you how to build a
 Datadoc JAR with beginner documentation for the fns and variables in
 `clojure.core`.
 
+
+## Step 0: Prepare a Leiningen project
+
+ 1. Create a Leiningen project.
+ 2. Add the newest version of
+    [lib-grenada](https://github.com/clj-grenada/lib-grenada/tree/master) to the
+    dependencies in project.clj.
+ 3. Also add the newest version of
+    [lib-grimoire](https://github.com/clojure-grimoire/lib-grimoire/tree/master)
+ 4. Change the Clojure version to 1.7.0.
+ 5. Start your favourite environment for evaluating Clojure code (probably some
+    sort of REPL).
+
+
 ## Step 1: Get a Datadoc JAR and look what's in there
 
-A Datadoc JAR is a JAR file with data documenting some Clojure code. To start
-off, create a Leiningen project and add the newest lib-grenada to the dependency
-list in project.clj. Change the Clojure version to 1.7.0. Then start your
-favourite environment for evaluating Clojure code (probably some sort of REPL).
-
+A Datadoc JAR is a JAR file with data documenting some Clojure code.
 Evaluate the following. It will download a Datadoc JAR with documentation for
 the core Clojure namespaces and read in the data.
 
 ```clojure
 (require '[grenada.sources :as gr-sources])
 
-(def data (gr-sources/from-depspec '[org.clojars.rmoehn/clojure "1.7.0+001"
+(def data (gr-sources/from-depspec '[org.clojars.rmoehn/clojure "1.7.0+003"
                                      :classifier "datadoc"]))
 ```
 
 You see that Datadoc JARs are specified in the same way as Leiningen
-dependencies, which in turn are based on Maven coordinates. Now have a look
-at the data.
+dependencies, which in turn are based on Maven coordinates. Now have a look at
+the data.
 
 ```clojure
 (require '[grenada.exporters.pretty :as e]
@@ -45,6 +55,71 @@ at the data.
 (e/pprint (get data-map ["org.clojure" "clojure" "1.7.0" "clj" "clojure.core" "concat"]))
 ```
 
+Please have a good look at these and play a bit, also with `data` and
+`data-map`, because it will prepare you for the next step…………
+
+
+## Step 2: Get some background knowledge
+
+Read [this
+explanation](https://github.com/clj-grenada/grenada-spec/blob/devel/NewModel.md)
+of Things, Aspects and Bars.
+
+Checkpoint: by now you should have understood that we're dealing with Things.
+They have coordinates that link them to concrete Clojure Things. They have
+Aspects that tell about what a Thing represents and what it means. They have
+Bars that hold arbitrary, but meaningful data. They are packaged up in Datadoc
+JARs. (If you're very puzzled at this point, please tell me your problems and
+I'll do my best to improve the documentation.)
+
+
+## Step 3: Write additional documentation
+
+You want to write beginner documentation for all the Things in clojure.core.
+First you need to settle on an input format. For ease of editing, we settle on
+one file per Thing, containing its coordinates, argument lists and doc string.
+The markup language will be [CommonMark](http://commonmark.org/). Example for
+the file `concat.md`:
+
+    ["org.clojure" "clojure" "1.7.0" "clj" "clojure.core" "concat"]
+
+    Argument lists: [] [x] [x y] [x y & zs]
+
+    `concat` takes an arbitrary number of collections and returns a lazy
+    sequence of their elements in order. – It *concat*enates its inputs into one
+    lazy sequence. Example:
+
+    ```clojure
+    (concat [:a :b :c] (range 4))
+    ;; => (:a :b :c 1 2 3)
+    ```
+
+    Note that you have to be careful with `concat`, as Stuart Sierra
+    [explains](http://stuartsierra.com/2015/04/26/clojure-donts-concat).
+
+You don't want to write out all these filenames and coordinates and argument
+lists by hand, so you write some code that generates them:
+
+```clojure
+(require '[clojure.java.io :as io]
+         '[grenada.things :as t]
+         '[grimoire.util :refer [munge]])
+
+(def all-clojure-core
+  (->> data
+       (filter #(t/has-aspect? ::t/find %))
+       (filter #(= "clojure.core" (get-in % [:coords 4])))))
+
+(.mkdir (io/file "core-doc"))
+
+(doseq [t all-clojure-core]
+  (spit (-> t
+            :coords
+            last
+            munge
+            (as-> x (str "core-doc/" x ".md")))
+        t))
+```
 
 
 
