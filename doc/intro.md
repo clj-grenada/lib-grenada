@@ -77,13 +77,13 @@ I'll do my best to improve the documentation.)
 
 You want to write beginner documentation for all the Things in clojure.core.
 First you need to settle on an input format. For ease of editing, we settle on
-one file per Thing, containing its coordinates, argument lists and doc string.
+one file per Thing, containing its coordinates, calling forms and doc string.
 The markup language will be [CommonMark](http://commonmark.org/). Example for
 the file `concat.md`:
 
     ["org.clojure" "clojure" "1.7.0" "clj" "clojure.core" "concat"]
 
-    Argument lists: [] [x] [x y] [x y & zs]
+    Calling: [] [x] [x y] [x y & zs]
 
     `concat` takes an arbitrary number of collections and returns a lazy
     sequence of their elements in order. – It *concat*enates its inputs into one
@@ -102,6 +102,7 @@ lists by hand, so you write some code that generates them:
 
 ```clojure
 (require '[clojure.java.io :as io]
+         '[clojure.string :as string]
          '[grenada.things :as t]
          '[grimoire.util :refer [munge]])
 
@@ -109,6 +110,14 @@ lists by hand, so you write some code that generates them:
   (->> data
        (filter #(t/has-aspect? ::t/find %))
        (filter #(= "clojure.core" (get-in % [:coords 4])))))
+
+(defn format-for-file [t]
+  (str (:coords t) \newline
+       \newline
+       (if-let [calling (get-in t [:bars :grenada.bars/calling])]
+         (str "Calling: " (string/join " " calling) \newline \newline)
+         "")
+       \newline))
 
 (.mkdir (io/file "core-doc"))
 
@@ -118,9 +127,25 @@ lists by hand, so you write some code that generates them:
             last
             munge
             (as-> x (str "core-doc/" x ".md")))
-        t))
+        (format-for-file t)))
 ```
 
+You also write some extra documentation for the namespace itself:
+
+    ["org.clojure" "clojure" "1.7.0" "clj" "clojure.core"]
+
+    The functions, procedures, macros and other definitions in `clojure.core`
+    constitute most of Clojure's functionality.
+
+    …
+
+
+## Step 4: Make Things out of the documentation you've written
+
+You now have the beginner documentation on file, but you want to attach it to
+Things, so that it can be packaged in a Datadoc JAR. In order to attach data of
+a Thing, you have to put it in a Bar. I have defined a Bar type that fits this
+purpose: `:poomoo.bars/docs`
 
 
  - What should the reader be able to do?
