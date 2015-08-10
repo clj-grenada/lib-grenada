@@ -14,11 +14,11 @@ Datadoc JAR with beginner documentation for the fns and variables in
 ## Step 0: Prepare a Leiningen project
 
  1. Create a Leiningen project.
- 2. Add the newest version of
-    [lib-grenada](https://github.com/clj-grenada/lib-grenada/tree/master) to the
-    dependencies in project.clj.
- 3. Also add the newest version of
-    [lib-grimoire](https://github.com/clojure-grimoire/lib-grimoire/tree/master)
+ 2. Add the newest version of the following libraries to the dependencies in
+    project.clj:
+     - [lib-grenada](https://github.com/clj-grenada/lib-grenada/tree/master)
+     - [poomoo](https://github.com/clj-grenada/poomoo)
+     - [lib-grimoire](https://github.com/clojure-grimoire/lib-grimoire/tree/master)
  4. Change the Clojure version to 1.7.0.
  5. Start your favourite environment for evaluating Clojure code (probably some
     sort of REPL).
@@ -121,13 +121,14 @@ lists by hand, so you write some code that generates them:
 
 (.mkdir (io/file "core-doc"))
 
-(doseq [t all-clojure-core]
-  (spit (-> t
-            :coords
-            last
-            munge
-            (as-> x (str "core-doc/" x ".md")))
-        (format-for-file t)))
+(doseq [t all-clojure-core
+        :let [path (-> t
+                       :coords
+                       last
+                       munge
+                       (as-> x (str "core-doc/" x ".md")))]]
+  (assert (not (.exists (io/file path))))
+  (spit path (format-for-file t)))
 ```
 
 You also write some extra documentation for the namespace itself:
@@ -143,9 +144,40 @@ You also write some extra documentation for the namespace itself:
 ## Step 4: Make Things out of the documentation you've written
 
 You now have the beginner documentation on file, but you want to attach it to
-Things, so that it can be packaged in a Datadoc JAR. In order to attach data of
+Things, so that it can be packaged in a Datadoc JAR. In order to attach data to
 a Thing, you have to put it in a Bar. I have defined a Bar type that fits this
-purpose: `:poomoo.bars/docs`
+purpose: `:poomoo.bars/docs` First you need to read and parse the documentation
+files. Poomoo also helps you with that:
+
+```clojure
+(require '[poomoo bars parsing])
+
+(defn attach-docs [things-map doc-map]
+  (let [{:keys [coords calling docs]} doc-map
+        thing (get things-map coords)]
+    (assert (every? #{coords docs thing}))
+    (->> thing
+         (t/attach-bar poomoo.bars/def-for-bar-type
+                       :poomoo.bars/docs
+                       {"doros-docs" docs}
+                       thing)
+         (as-> t
+           (if (t/has-bar? t ::b/calling)
+             (t/replace-bar b/def-for-bar-type t ::b/calling calling)
+             t)))))
+
+(def things-with-docs
+  (->> "core-doc"
+       file-seq
+       rest ; Throws out the directory itself.
+       (map poomoo.parsing/parse-doc-file)
+       (reduce attach-docs data-map))))
+```
+
+This is the manual way of attaching Bars and it assumes that the Thing doesn't
+have a `:poomoo.bars/doc` already. Later there will be the possibility of
+merging two Things with the same coordinates together, automatically combining
+their Bars.
 
 
  - What should the reader be able to do?
