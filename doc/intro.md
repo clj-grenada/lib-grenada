@@ -91,7 +91,7 @@ the file `concat.md`:
 
     ```clojure
     (concat [:a :b :c] (range 4))
-    ;; => (:a :b :c 1 2 3)
+    ;; => (:a :b :c 0 1 2 3)
     ```
 
     Note that you have to be careful with `concat`, as Stuart Sierra
@@ -190,6 +190,30 @@ Let's see if our new docs were attached:
 (e/pprint (get things-with-docs-map ["org.clojure" "clojure" "1.7.0" "clj" "clojure.core" "concat"]))
 ```
 
+## Step 5: Verify the code examples
+
+You also want to make sure that the code examples you included with the
+additional docs actually do what you say they do. Poomoo contains some primitive
+procedures that check examples if they're written as
+[above](#step-3-write-additional-documentation).
+
+```clojure
+(require '[poomoo.doctest :as doctest])
+
+(doseq [[coords thing] things-with-docs-map
+        :when (t/has-bar? :poomoo.bars/docs thing)
+        :let [doc (get-in thing [:bars :poomoo.bars/docs "doros-docs"])
+              check-res (poomoo.doctest/check-examples (str doc \newline))]
+        :when (seq check-res)]
+  (println "Failed check.")
+  (e/pprint thing)
+  (e/pprint check-res))
+```
+
+If all your examples are correct, it prints nothing. Not the most user-friendly
+interface, but good enough for private checks. And don't puzzle over why we're
+adding a newline; it just works around a shortcoming of the parser.
+
  - What should the reader be able to do?
      - Understand the Grenada format.
        - Know what Things are.
@@ -269,20 +293,19 @@ Let's see if our new docs were attached:
         - Settle on a format for documentation that is one file per Thing and
           the coordinates at the top:
 
-          ```
-          ["org.clojure" "clojure" "1.7.0" "clj" "core.core" "map"]
+              ["org.clojure" "clojure" "1.7.0" "clj" "core.core" "map"]
 
-          Arg lists: …
+              Arg lists: …
 
-          …
-          ```
+              …
+
         - We can write a short snippet to generate such files for all Finds in
           clojure.core.
         - Can also write documentation for a namespace:
-          ```
-          ["org.clojure" "clojure" "1.7.0" "clj" "core.core"]
-          …
-          ```
+
+              ["org.clojure" "clojure" "1.7.0" "clj" "core.core"]
+              …
+
         - Package this up into a collection of Things. – A Bar with some AST
           and the original data each.
            - In case you want to attach some data and there is no Bar type that
