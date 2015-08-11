@@ -158,7 +158,11 @@
 
 ;;;; Functions for doing stuff with Things and Bars
 
-;; TODO: Add better diagnostics to the other asserts. (RM 2015-08-08)
+(defn has-bar? [bar-tag thing]
+  {:pre [(thing?+ thing)]}
+  (contains? (:bars thing) bar-tag))
+
+;p; TODO: Add better diagnostics to the other asserts. (RM 2015-08-08)
 (defn assert-bar-attachable [bar-type-def thing]
   (assert (things.def/bar-type?+ bar-type-def) "not a proper Bar definition")
   (assert! ((:aspect-prereqs-pred bar-type-def)
@@ -168,7 +172,7 @@
   (assert ((:bar-prereqs-pred bar-type-def)
            (:bars thing))
           "unfulfilled Bar prerequisites according to Bar type")
-  (assert (not (contains? (:bars thing) (:name bar-type-def)))
+  (assert (not (has-bar? (:name bar-type-def) thing))
           (str "Bar of type " (:name bar-type-def) " already present")))
 
 (defn attach-bar [bar-type-defs bar-tag bar thing]
@@ -185,5 +189,10 @@
           tags-and-bars))
 
 (defn detach-bar [bar-tag thing]
-  {:pre [(thing?+ thing) (contains? (:bars thing) bar-tag)]}
+  {:pre [(thing?+ thing) (has-bar? bar-tag thing)]}
   (gr-utils/dissoc-in* thing [:bars bar-tag]))
+
+(defn replace-bar [bar-type-defs bar-tag bar thing]
+  (->> thing
+       (detach-bar bar-tag)
+       (attach-bar bar-type-defs bar-tag bar)))
