@@ -172,7 +172,8 @@ files. Poomoo also helps you with that:
        io/file
        file-seq
        rest ; Throws out the directory itself.
-       (map poomoo.parsing/parse-doc-file)
+       (map slurp)
+       (map poomoo.parsing/parse-ext-doc-string)
        (reduce insert-docs data-map)))
 ```
 
