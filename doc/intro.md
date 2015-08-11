@@ -83,7 +83,7 @@ the file `concat.md`:
 
     ["org.clojure" "clojure" "1.7.0" "clj" "clojure.core" "concat"]
 
-    Calling: [] [x] [x y] [x y & zs]
+    Calling: [& xs]
 
     `concat` takes an arbitrary number of collections and returns a lazy
     sequence of their elements in order. – It *concat*enates its inputs into one
@@ -150,35 +150,44 @@ purpose: `:poomoo.bars/docs` First you need to read and parse the documentation
 files. Poomoo also helps you with that:
 
 ```clojure
-(require '[poomoo bars parsing])
+(require '[grenada.bars :as b]
+         '[poomoo bars parsing])
 
-(defn attach-docs [things-map doc-map]
-  (let [{:keys [coords calling docs]} doc-map
+(defn insert-docs [things-map doc-map]
+  (let [{:keys [coords calling contents]} doc-map
         thing (get things-map coords)]
-    (assert (every? #{coords docs thing}))
-    (->> thing
-         (t/attach-bar poomoo.bars/def-for-bar-type
-                       :poomoo.bars/docs
-                       {"doros-docs" docs}
-                       thing)
-         (as-> t
-           (if (t/has-bar? t ::b/calling)
-             (t/replace-bar b/def-for-bar-type t ::b/calling calling)
-             t)))))
+    (assert (and coords contents thing))
+    (as-> thing t
+      (t/attach-bar poomoo.bars/def-for-bar-type
+                    :poomoo.bars/docs
+                    {"doros-docs" contents}
+                    t)
+      (if (t/has-bar? ::b/calling  t)
+        (t/replace-bar b/def-for-bar-type ::b/calling calling t)
+        t)
+      (assoc things-map coords t))))
 
-(def things-with-docs
+(def things-with-docs-map
   (->> "core-doc"
+       io/file
        file-seq
        rest ; Throws out the directory itself.
        (map poomoo.parsing/parse-doc-file)
-       (reduce attach-docs data-map))))
+       (reduce insert-docs data-map)))
 ```
 
 This is the manual way of attaching Bars and it assumes that the Thing doesn't
-have a `:poomoo.bars/doc` already. Later there will be the possibility of
+have a `:poomoo.bars/doc` Bar already. Later there will be the possibility of
 merging two Things with the same coordinates together, automatically combining
 their Bars.
 
+Let's see if our new docs were attached:
+
+```clojure
+(e/pprint (get things-with-docs-map ["org.clojure" "clojure" "1.7.0" "clj"]))
+(e/pprint (get things-with-docs-map ["org.clojure" "clojure" "1.7.0" "clj" "clojure.core"]))
+(e/pprint (get things-with-docs-map ["org.clojure" "clojure" "1.7.0" "clj" "clojure.core" "concat"]))
+```
 
  - What should the reader be able to do?
      - Understand the Grenada format.
