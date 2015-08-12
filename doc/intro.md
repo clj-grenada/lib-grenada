@@ -156,7 +156,9 @@ purpose: `:poomoo.bars/docs` First you need to read and parse the documentation
 files. Poomoo also helps you with that:
 
 ```clojure
-(require '[grenada.bars :as b]
+(require '[grenada
+           [bars :as b]
+           [utils :as gr-utils]]
          '[poomoo bars parsing])
 
 (defn insert-docs [things-map doc-map]
@@ -176,8 +178,7 @@ files. Poomoo also helps you with that:
 (def things-with-docs-map
   (let [pre (->> "core-doc"
                  io/file
-                 file-seq
-                 rest ; Throws out the directory itself.
+                 gr-utils/ordinary-file-seq
                  (map slurp)
                  (pmap poomoo.parsing/parse-ext-doc-string)
                  (reduce insert-docs data-map))]
@@ -235,8 +236,6 @@ create and deploy. When you do this, you have to change `rmoehn` to your own
 Clojars user name at least.
 
 ```clojure
-(require '[grenada.utils :as gr-utils])
-
 (def coords {:group "org.clojars.rmoehn"
              :artifact "clojure-doro-docs"
              :version "1.7.0+001"
@@ -246,16 +245,16 @@ Clojars user name at least.
                org.clojars.rmoehn:clojure:1.7.0+003:datadoc.")})
 ```
 
+Then this will give you a JAR and a POM file in `target/datadoc`:
+
 ```clojure
-;; TODO: Require the proper namespace after relocating the JAR exporter. (RM
-;;       2015-08-12)
-(require '[grenada.core :as gr-core])
+(require '[grenada.exporters :as exporters])
 
 (def things-with-docs (gr-converters/to-seq things-with-docs-map))
 
-(gr-core/jar-from-things things-with-docs
-                         "target/datadoc"
-                         coords)
+(exporters/jar things-with-docs
+               "target/datadoc"
+               coords)
 ```
 
 
