@@ -7,7 +7,7 @@
 
 ;;;; Miscellaneous helpers
 
-(defn- coords->path
+(defn coords->path
   "Returns a File with a relative path from the given coords. The result can be
   used to store a Thing on disk, for example.
 

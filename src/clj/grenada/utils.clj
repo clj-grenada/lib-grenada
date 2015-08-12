@@ -1,6 +1,7 @@
 (ns grenada.utils
   "Miscellaneous utilities."
-  (:require [plumbing.core :refer [safe-get]]))
+  (:require [clojure.java.io :as io]
+            [plumbing.core :refer [safe-get]]))
 
 (defn warn [& args]
   (binding [*out* *err*] (apply println "WARNING! "args)))
@@ -15,6 +16,11 @@
                       ~(if (list? form)
                          `(~@form ~@symv)
                          `(~form ~@symv))))
+
+(defn str-file
+  "Like io/file, but (str …)ingifies the resulting File."
+  [& args]
+  (str (apply io/file args)))
 
 (defn dissoc-in*
   "Like plumbing.core/dissoc-in, but doesn't remove empty maps."
