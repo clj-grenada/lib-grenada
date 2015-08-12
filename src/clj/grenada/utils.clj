@@ -4,8 +4,13 @@
             [clojure.string :as string]
             [plumbing.core :refer [safe-get]]))
 
+;;;; Not categorized
+
 (defn warn [& args]
   (binding [*out* *err*] (apply println "WARNING! "args)))
+
+
+;;;; Concerning Graph – plumbing.graph
 
 (defmacro fnk*
   "Shortens fnks that just apply some other function to their arguments.
@@ -18,10 +23,19 @@
                          `(~@form ~@symv)
                          `(~form ~@symv))))
 
+
+;;;; Concerning files – clojure.java.io
+
 (defn str-file
   "Like io/file, but (str …)ingifies the resulting File."
   [& args]
   (str (apply io/file args)))
+
+(defn ordinary-file-seq [fl]
+  (filter #(.isFile %) (file-seq fl)))
+
+
+;;;; Concerning strings – clojure.string
 
 (defn clean-up-string
   "Removes trailing and leading whitespace and newlines from a string.
@@ -33,6 +47,9 @@
        string/split-lines
        (map string/trim)
        (string/join " ")))
+
+
+;;;; Concerning collections
 
 (defn dissoc-in*
   "Like plumbing.core/dissoc-in, but doesn't remove empty maps."
