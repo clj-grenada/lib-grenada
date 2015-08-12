@@ -1,4 +1,6 @@
-# The case of Dorothy the Documenter
+# The case of Dorothy the Documenter – Compiling Datdoc JARs in 27 easy steps
+
+Actual there are only seven steps, so don't worry.
 
 (If you've found this part of the documentation by chance, but aren't sure
 whether it is what you're looking for, go to the [overview](overview.md).)
@@ -105,7 +107,11 @@ lists by hand, so you write some code that generates them:
          '[clojure.string :as string]
          '[grenada.things :as t]
          '[grimoire.util :refer [munge]])
+```
 
+<!-- Fenced code blocks with more than three backticks will be stripped away by
+     strip-markdown. -->
+```````clojure
 (def all-clojure-core
   (->> data
        (filter #(t/has-aspect? ::t/find %))
@@ -129,7 +135,7 @@ lists by hand, so you write some code that generates them:
                        (as-> x (str "core-doc/" x ".md")))]]
   (assert (not (.exists (io/file path))))
   (spit path (format-for-file t)))
-```
+```````
 
 You also write some extra documentation for the namespace itself:
 
@@ -168,13 +174,20 @@ files. Poomoo also helps you with that:
       (assoc things-map coords t))))
 
 (def things-with-docs-map
-  (->> "core-doc"
-       io/file
-       file-seq
-       rest ; Throws out the directory itself.
-       (map slurp)
-       (map poomoo.parsing/parse-ext-doc-string)
-       (reduce insert-docs data-map)))
+  (let [pre (->> "core-doc"
+                 io/file
+                 file-seq
+                 rest ; Throws out the directory itself.
+                 (map slurp)
+                 (pmap poomoo.parsing/parse-ext-doc-string)
+                 (reduce insert-docs data-map))]
+    (update pre
+            ["org.clojure" "clojure" "1.7.0" "clj" "clojure.core"]
+            #(t/attach-bar poomoo.bars/def-for-bar-type
+                           :poomoo.bars/docs-markup-all
+                           :common-mark
+                           %))))
+(shutdown-agents) ; See https://clojuredocs.org/clojure.core/pmap#example-542692d4c026201cdc327030.
 ```
 
 This is the manual way of attaching Bars and it assumes that the Thing doesn't
@@ -197,7 +210,7 @@ additional docs actually do what you say they do. Poomoo contains some primitive
 procedures that check examples if they're written as
 [above](#step-3-write-additional-documentation).
 
-```clojure
+```````clojure
 (require '[poomoo.doctest :as doctest])
 
 (doseq [[coords thing] things-with-docs-map
@@ -208,11 +221,43 @@ procedures that check examples if they're written as
   (println "Failed check.")
   (e/pprint thing)
   (e/pprint check-res))
-```
+```````
 
 If all your examples are correct, it prints nothing. Not the most user-friendly
 interface, but good enough for private checks. And don't puzzle over why we're
 adding a newline; it just works around a shortcoming of the parser.
+
+
+## Step 6: Putting it all in a JAR
+
+First you have to define the Maven coordinates of the Datadoc JAR you want to
+create and deploy. When you do this, you have to change `rmoehn` to your own
+Clojars user name at least.
+
+```clojure
+(require '[grenada.utils :as gr-utils])
+
+(def coords {:group "org.clojars.rmoehn"
+             :artifact "clojure-doro-docs"
+             :version "1.7.0+001"
+             :description
+             (gr-utils/clean-up-string
+               "clojure.core with added beginner documentation. Based on
+               org.clojars.rmoehn:clojure:1.7.0+003:datadoc.")})
+```
+
+```clojure
+;; TODO: Require the proper namespace after relocating the JAR exporter. (RM
+;;       2015-08-12)
+(require '[grenada.core :as gr-core])
+
+(def things-with-docs (gr-converters/to-seq things-with-docs-map))
+
+(gr-core/jar-from-things things-with-docs
+                         "target/datadoc"
+                         coords)
+```
+
 
  - What should the reader be able to do?
      - Understand the Grenada format.
