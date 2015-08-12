@@ -13,4 +13,6 @@
    {"clojars"       "https://clojars.org/repo/"
     "maven-central" "https://repo1.maven.org/maven2/"}
 
+   :jar-root-dir "datadoc"
+
    :shimdandy-version "1.1.0"})
