@@ -29,7 +29,7 @@
     (gr-jar/jar-from-entries-map files-map out-dir coords-out)))
 
 ;; REVIEW: Should we throw this out? (RM 2015-08-02)
-(defn deploy-jar [{artifact :name :keys [group version] :as coords} out-dir
+(defn deploy-jar [{:keys [artifact group version] :as coords} out-dir
                   [u p]]
   (aether/deploy
     :coordinates [(symbol group artifact)
@@ -39,4 +39,5 @@
     :pom-file (io/file out-dir "pom.xml")
     :repository {"clojars" {:url "https://clojars.org/repo"
                             :username u
-                            :password p}}))
+                            :password p}}
+    :transfer-listener :stdout))
