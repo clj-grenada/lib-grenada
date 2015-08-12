@@ -4,3 +4,6 @@
 ;; MAYBE TODO: Add a variant that preserves order. (RM 2015-06-21)
 (defn to-mapping [ms]
   (plumbing/map-from-vals #(safe-get % :coords) ms))
+
+(defn to-seq [tsmap]
+  (vals tsmap))

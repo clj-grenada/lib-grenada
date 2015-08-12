@@ -1,6 +1,7 @@
 (ns grenada.utils
   "Miscellaneous utilities."
   (:require [clojure.java.io :as io]
+            [clojure.string :as string]
             [plumbing.core :refer [safe-get]]))
 
 (defn warn [& args]
@@ -21,6 +22,17 @@
   "Like io/file, but (str …)ingifies the resulting File."
   [& args]
   (str (apply io/file args)))
+
+(defn clean-up-string
+  "Removes trailing and leading whitespace and newlines from a string.
+
+  Can be used to remove all the garbage from single-paragraph, multiline Clojure
+  strings."
+  [s]
+  (->> s
+       string/split-lines
+       (map string/trim)
+       (string/join " ")))
 
 (defn dissoc-in*
   "Like plumbing.core/dissoc-in, but doesn't remove empty maps."
