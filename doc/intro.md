@@ -188,7 +188,6 @@ files. Poomoo also helps you with that:
                            :poomoo.bars/docs-markup-all
                            :common-mark
                            %))))
-(shutdown-agents) ; See https://clojuredocs.org/clojure.core/pmap#example-542692d4c026201cdc327030.
 ```
 
 This is the manual way of attaching Bars and it assumes that the Thing doesn't
@@ -257,6 +256,34 @@ Then this will give you a JAR and a POM file in `target/datadoc`:
                coords)
 ```
 
+Just for fun, you can read a Thing from the JAR you created:
+
+```clojure
+(-> (gr-sources/from-jar "target/datadoc/clojure-doro-docs-1.7.0+001-datadoc.jar")
+    gr-converters/to-mapping
+    (get-in [["org.clojure" "clojure" "1.7.0" "clj" "clojure.core" "concat"]
+             :bars
+             :poomoo.bars/docs
+             "doros-docs"])
+    e/pprint)
+```
+
+
+## Step 7: Deploying the JAR to Clojars
+
+If you don't want to use
+[lein-datadoc](https://github.com/clj-grenada/lein-datadoc), you can use an
+ugly-but-working procedure from `grenada.postprocessors`:
+
+```````clojure
+(require '[grenada.postprocessors :as postprocessors])
+
+(postprocessors/deploy-jar coords "target/datadoc" [; <Clojars user name>
+                                                    ; <Clojars password>
+                                                    ])
+```````
+
+That's it!
 
  - What should the reader be able to do?
      - Understand the Grenada format.
