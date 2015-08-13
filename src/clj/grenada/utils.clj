@@ -1,9 +1,16 @@
 (ns grenada.utils
   "Miscellaneous utilities."
-  (:require [plumbing.core :refer [safe-get]]))
+  (:require [clojure.java.io :as io]
+            [clojure.string :as string]
+            [plumbing.core :refer [safe-get]]))
+
+;;;; Not categorized
 
 (defn warn [& args]
   (binding [*out* *err*] (apply println "WARNING! "args)))
+
+
+;;;; Concerning Graph – plumbing.graph
 
 (defmacro fnk*
   "Shortens fnks that just apply some other function to their arguments.
@@ -15,6 +22,34 @@
                       ~(if (list? form)
                          `(~@form ~@symv)
                          `(~form ~@symv))))
+
+
+;;;; Concerning files – clojure.java.io
+
+(defn str-file
+  "Like io/file, but (str …)ingifies the resulting File."
+  [& args]
+  (str (apply io/file args)))
+
+(defn ordinary-file-seq [fl]
+  (filter #(.isFile %) (file-seq fl)))
+
+
+;;;; Concerning strings – clojure.string
+
+(defn clean-up-string
+  "Removes trailing and leading whitespace and newlines from a string.
+
+  Can be used to remove all the garbage from single-paragraph, multiline Clojure
+  strings."
+  [s]
+  (->> s
+       string/split-lines
+       (map string/trim)
+       (string/join " ")))
+
+
+;;;; Concerning collections
 
 (defn dissoc-in*
   "Like plumbing.core/dissoc-in, but doesn't remove empty maps."
@@ -41,3 +76,6 @@
   "Analogy: get:safe-get :: select-keys:safe-select-keys"
   [m ks]
   (plumbing.core/map-from-keys #(safe-get m %) ks))
+
+(defn keyset [m]
+  (set (keys m)))

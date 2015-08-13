@@ -36,8 +36,11 @@
 (defn assoc-when [tv k v]
   (fmap #(plumbing/assoc-when % k v) tv))
 
-(defn safe-get [[t v] k]
+(defn safe-get [[_ v] k]
   (plumbing/safe-get v k))
 
-(defn safe-select-keys [[t v] ks]
+(defn safe-get-in [[_ v] ks]
+  (plumbing/safe-get-in v ks))
+
+(defn safe-select-keys [[_ v] ks]
   (grenada.utils/safe-select-keys v ks))

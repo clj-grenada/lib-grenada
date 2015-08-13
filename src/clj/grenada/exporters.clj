@@ -1,9 +1,16 @@
 (ns grenada.exporters
+  "
+
+  See also grenada.exporters.pretty."
   (:require [clojure.java.io :as io]
+            [darkestperu.jar :as jar]
             [plumbing.core :as plumbing :refer [safe-get]]
             grimoire.util
-            [grenada.config :refer [config]]
-            [grenada.things :as t]))
+            [grenada
+             [config :refer [config]]
+             [things :as t]
+             [utils :as gr-utils]]
+            [grenada.utils.jar :as gr-jar]))
 
 ;;;; Miscellaneous helpers
 
@@ -41,10 +48,26 @@
     (exp-map-fs-hier m out-dir)))
 
 
-
 ;;;; Flat filesystem exporters
 
 (defn fs-flat [data out-file]
   (prn-spit out-file data))
 
-;;; See also grenada.exporters.pretty.
+
+;;;; JAR exporter
+
+(defn- thing->jar-entry [t]
+  [(gr-utils/str-file
+     (safe-get config :jar-root-dir)
+     (coords->path (safe-get t :coords))
+     (safe-get config :datafile-name))
+   (jar/->string-entry (prn-str t))])
+
+;; TODO: Document the feature that one can pass additional entries for the POM
+;;       file in coords-out. (RM 2015-08-07)
+(defn jar [things out-dir coords-out]
+  (gr-jar/jar-from-entries-map (->> things
+                                    (map thing->jar-entry)
+                                    (into {}))
+                               out-dir
+                               coords-out))
