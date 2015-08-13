@@ -2,24 +2,27 @@
 
 Actual there are only eight steps, so don't worry.
 
-(If you've found this part of the documentation by chance, but aren't sure
-whether it is what you're looking for, go to the [overview](overview.md).)
+(If you're not sure whether this piece of documentation is what you're looking
+for, go to the [overview](overview.md).)
 
 If you've read the Clojure Gazette interview about lib-grenada during the Google
-Summer of Code, you already know Dorothy the Documenter and her quest. This here
-is a tutorial that guides you through the steps she would take. If you don't
-know Dorothy the Documenter: in this tutorial I'll show you how to build a
-Datadoc JAR with beginner documentation for the fns and variables in
-`clojure.core`.
+Summer of Code, you already know Dorothy the Documenter and her quest. This
+tutorial guides you through the steps she would take. If you don't know Dorothy
+the Documenter: I'll show you how to **build and deploy a Datadoc JAR** with
+beginner documentation for the fns and variables in `clojure.core`.
 
+In the following, you will see many fns being called that you don't know. I
+realize that I'm throwing a lot at you, but please bear with me. As long as you
+understand roughly what is going on, you're fine. And if you're interested in
+the details, the doc strings will help.
 
 ## Step 0: Prepare a Leiningen project
 
  1. Create a Leiningen project.
- 2. Add the newest version of the following libraries to the dependencies in
+ 2. Add the newest versions of the following libraries to the dependencies in
     project.clj:
      - [lib-grenada](https://github.com/clj-grenada/lib-grenada/tree/master)
-     - [poomoo](https://github.com/clj-grenada/poomoo)
+     - [poomoo](https://github.com/clj-grenada/poomoo/tree/master)
      - [lib-grimoire](https://github.com/clojure-grimoire/lib-grimoire/tree/master)
  4. Change the Clojure version to 1.7.0.
  5. Start your favourite environment for evaluating Clojure code (probably some
@@ -39,9 +42,11 @@ the core Clojure namespaces and read in the data.
                                      :classifier "datadoc"]))
 ```
 
-You see that Datadoc JARs are specified in the same way as Leiningen
-dependencies, which in turn are based on Maven coordinates. Now have a look at
-the data.
+You see that Datadoc JARs are specified in the same way as [Leiningen
+dependencies](https://github.com/technomancy/leiningen/blob/master/doc/TUTORIAL.md#dependencies),
+which in turn are based on Maven
+[coordinates](https://maven.apache.org/pom.html#Maven_Coordinates). Now have a
+look at the data.
 
 ```clojure
 (require '[grenada.exporters.pretty :as e]
@@ -67,21 +72,21 @@ Read [this
 explanation](https://github.com/clj-grenada/grenada-spec/blob/devel/NewModel.md)
 of Things, Aspects and Bars.
 
-Checkpoint: by now you should have understood that we're dealing with Things.
-They have coordinates that link them to concrete Clojure Things. They have
-Aspects that tell about what a Thing represents and what it means. They have
-Bars that hold arbitrary, but meaningful data. They are packaged up in Datadoc
+Checkpoint: by now you should have understood that we're dealing with Things. A
+Thing has coordinates that link it to a concrete Clojure Thing. A Thing has
+Aspects that tell about what it represents and what it means. A Thing has Bars
+that hold arbitrary, but meaningful, data. Things are packaged up in Datadoc
 JARs. (If you're very puzzled at this point, please tell me your problems and
 I'll do my best to improve the documentation.)
 
 
 ## Step 3: Write additional documentation
 
-You want to write beginner documentation for all the Things in clojure.core.
-First you need to settle on an input format. For ease of editing, we settle on
-one file per Thing, containing its coordinates, calling forms and doc string.
-The markup language will be [CommonMark](http://commonmark.org/). Example for
-the file `concat.md`:
+You want to write beginner documentation for all the Things in `clojure.core`.
+First you need to think up an input format. You could use EDN directly, but for
+ease of editing we settle on one file per Thing, containing its coordinates,
+calling forms and doc string. The markup language will be
+[CommonMark](http://commonmark.org/). Example for the file `concat.md`:
 
     ["org.clojure" "clojure" "1.7.0" "clj" "clojure.core" "concat"]
 
@@ -110,7 +115,8 @@ lists by hand, so you write some code that generates them:
 ```
 
 <!-- Fenced code blocks with more than three backticks will be stripped away by
-     strip-markdown. -->
+     strip-markdown. This allows you to leave out code snippets from evaluation.
+     -->
 ```````clojure
 (def all-clojure-core
   (->> data
@@ -121,7 +127,8 @@ lists by hand, so you write some code that generates them:
   (str (:coords t) \newline
        \newline
        (if-let [calling (get-in t [:bars :grenada.bars/calling])]
-         (str "Calling: " (string/join " " calling) \newline \newline)
+         (str "Calling: " (string/join " " calling) \newline
+              \newline)
          "")
        \newline))
 
@@ -132,12 +139,13 @@ lists by hand, so you write some code that generates them:
                        :coords
                        last
                        munge
-                       (as-> x (str "core-doc/" x ".md")))]]
+                       (as-> munged-name (str "core-doc/" munged-name ".md")))]]
   (assert (not (.exists (io/file path))))
   (spit path (format-for-file t)))
 ```````
 
-You also write some extra documentation for the namespace itself:
+You fill in all those files with your beginner documentation and also write
+something for the namespace itself. – `core-doc/clojure-core.md`:
 
     ["org.clojure" "clojure" "1.7.0" "clj" "clojure.core"]
 
@@ -151,9 +159,14 @@ You also write some extra documentation for the namespace itself:
 
 You now have the beginner documentation on file, but you want to attach it to
 Things, so that it can be packaged in a Datadoc JAR. In order to attach data to
-a Thing, you have to put it in a Bar. I have defined a Bar type that fits this
-purpose: `:poomoo.bars/docs` First you need to read and parse the documentation
-files. Poomoo also helps you with that:
+a Thing, you have to put them in a Bar. The Bar type `:poomoo.bars/docs` is
+appropriate to this case. (If there's no Bar type that suits your needs, you can
+[write your
+own](https://github.com/clj-grenada/grenada-spec/blob/devel/BarsImp.md). It's
+not hard.)
+
+First you need to read and parse the documentation files. Poomoo helps you with
+that:
 
 ```clojure
 (require '[grenada
@@ -195,7 +208,7 @@ have a `:poomoo.bars/doc` Bar already. Later there will be the possibility of
 merging two Things with the same coordinates together, automatically combining
 their Bars.
 
-Let's see if our new docs were attached:
+Let's see if our new docs have been attached:
 
 ```clojure
 (e/pprint (get things-with-docs-map ["org.clojure" "clojure" "1.7.0" "clj"]))
@@ -205,9 +218,9 @@ Let's see if our new docs were attached:
 
 ## Step 5: Verify the code examples
 
-You also want to make sure that the code examples you included with the
-additional docs actually do what you say they do. Poomoo contains some primitive
-procedures that check examples if they're written as
+You want to make sure that the code examples you included with the additional
+docs actually do what you say they do. Poomoo contains primitive procedures that
+check examples if they're written as
 [above](#step-3-write-additional-documentation).
 
 ```````clojure
@@ -228,11 +241,11 @@ interface, but good enough for private checks. And don't puzzle over why we're
 adding a newline; it just works around a shortcoming of the parser.
 
 
-## Step 6: Putting it all in a JAR
+## Step 6: Put it all in a JAR
 
 First you have to define the Maven coordinates of the Datadoc JAR you want to
 create and deploy. When you do this, you have to change `rmoehn` to your own
-Clojars user name at least.
+Clojars user name.
 
 ```clojure
 (def coords {:group "org.clojars.rmoehn"
@@ -269,11 +282,9 @@ Just for fun, you can read a Thing from the JAR you created:
 ```
 
 
-## Step 7: Deploying the JAR to Clojars
+## Step 7: Deploy the JAR to Clojars
 
-If you don't want to use
-[lein-datadoc](https://github.com/clj-grenada/lein-datadoc), you can use an
-ugly-but-working procedure from `grenada.postprocessors`:
+An ugly procedure from `grenada.postprocessors` does the job:
 
 ```````clojure
 (require '[grenada.postprocessors :as postprocessors])
@@ -282,6 +293,10 @@ ugly-but-working procedure from `grenada.postprocessors`:
                                                     ; <Clojars password>
                                                     ])
 ```````
+
+Alternatively, you can use
+[lein-datadoc](https://github.com/clj-grenada/lein-datadoc), which uses
+Leiningen's credentials system.
 
 That's it! If you want to know what else is available, have a look at the
 [overview](doc/overview.md).
