@@ -4,7 +4,10 @@ A Clojure library that helps you doing stuff according to the [Grenada
 spec](https://github.com/clj-grenada/grenada-spec). Currently this is in an
 early stage of development and not supposed to be used by ordinary people.
 
-## Documentation
+[documentation overview](doc/overview.md)
+
+
+## Comments on documentation
 
 ### Docstrings
 
