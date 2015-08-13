@@ -2,6 +2,21 @@
 
 Actual there are only eight steps, so don't worry.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+
+- [Step 0: Prepare a Leiningen project](#step-0-prepare-a-leiningen-project)
+- [Step 1: Get a Datadoc JAR and look what's in there](#step-1-get-a-datadoc-jar-and-look-whats-in-there)
+- [Step 2: Get some background knowledge](#step-2-get-some-background-knowledge)
+- [Step 3: Write additional documentation](#step-3-write-additional-documentation)
+- [Step 4: Make Things out of the documentation you've written](#step-4-make-things-out-of-the-documentation-youve-written)
+- [Step 5: Verify the code examples](#step-5-verify-the-code-examples)
+- [Step 6: Put it all in a JAR](#step-6-put-it-all-in-a-jar)
+- [Step 7: Deploy the JAR to Clojars](#step-7-deploy-the-jar-to-clojars)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 (If you're not sure whether this piece of documentation is what you're looking
 for, go to the [overview](overview.md).)
 
@@ -300,3 +315,6 @@ Leiningen's credentials system.
 
 That's it! If you want to know what else is available, have a look at the
 [overview](doc/overview.md).
+
+
+(Table of contents created with [Doctoc](https://github.com/thlorenz/doctoc).)
