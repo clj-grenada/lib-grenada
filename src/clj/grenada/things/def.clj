@@ -46,6 +46,15 @@
                   :valid-pred          (fn [_] true)
                   :schema              s/Any})
 
+(defn blank-bar-type-def
+  "Defines a Bar type with name BAR-TAG that imposes no restrictions at all.
+
+  Can be used to attach Bars whose actual definition is not available. Using is
+  a bit smelly and can only be deodorized by checking the Thing with the proper
+  Bar type definition later."
+  [bar-tag]
+  (map->bar-type {:name bar-tag}))
+
 (defn assert-bar-valid [bar-type bar]
   (assert (bar-type?+ bar-type) "improper Bar type definition")
   (s/validate (:schema bar-type) bar)
