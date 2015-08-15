@@ -103,7 +103,7 @@
 
   Defines the same functions as deftag. Additionally defines functions as
   described in the doc strings doc strings of t+?-form and map->t-form."
-  {:grenada.cmeta.bars {:voyt.bars/requires ['schema.core
+  {:grenada.cmeta/bars {:voyt.bars/requires ['schema.core
                                              'grenada.things.schemas
                                              'guten-tag.core]
                         :voyt.bars/defines ["${NAME-SYM}+?"
