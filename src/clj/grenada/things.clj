@@ -2,9 +2,15 @@
   ;; TODO: Don't require people to read the source for finding out everything
   ;;       that's important. I hate it when I have to look into the source code
   ;;       in order to find out how to use a library. (RM 2015-07-05)
-  (:require [clojure.core :as clj]
-            [schema.core :as s]
-            [grenada.schemas :as schemas]
+  (:require [clojure
+             [core :as clj]
+             [set :as set]]
+            [schema
+             [core :as s]
+             [macros :refer [assert!]]]
+            [grenada
+             [schemas :as schemas]
+             [utils :as gr-utils]]
             [plumbing.core :as plumbing :refer [safe-get safe-get-in]]
             [guten-tag.core :as gt]
             [grenada.guten-tag.more :as gt-more]
@@ -19,6 +25,11 @@
                   :bars {schemas/NSQKeyword s/Any}}
                  {:aspects #{}
                   :bars {}})
+
+(defn vec->thing [[tag m]]
+  (let [thing (gt/->ATaggedVal tag m)]
+    (assert (thing?+ thing))
+    thing))
 
 
 ;;;; Definitions of the main aspects
@@ -50,6 +61,49 @@
              {:name nm
               :ncoords (inc i)}
              (get main-aspect-specials nm)))))
+
+
+;;;; Working with main aspects
+
+(defn pick-main-aspect [aspects]
+  (let [main-aspects (set/intersection aspects (set main-aspect-names))]
+    (assert! (= 1 (count main-aspects))
+             "More then one main Aspect among: %s." aspects)
+    (first main-aspects)))
+
+;; Note: Don't repeat such a tangle if more functions are required that work on
+;;       both Things and Aspect keywords like above-incl? and below-incl?. In
+;;       that case, start passing Things to :aspect-prereqs-pred, so that it can
+;;       use the whole power of functions on Things.
+(defmulti ^:private resolve-main-aspect
+  (fn resolve-main-aspect-dispatch [x]
+    (cond
+      (thing? x)   :thing
+      (keyword? x) :keyword
+      :else        :default)))
+
+(defmethod resolve-main-aspect :thing [thing]
+  (assert! (thing?+ thing) "Not a valid Thing: %s." thing)
+  (pick-main-aspect (safe-get thing :aspects)))
+
+(defmethod resolve-main-aspect :keyword [aspect-kw]
+  (assert! (contains? (set main-aspect-names) aspect-kw)
+           "Not a main Aspect: %s." aspect-kw)
+  aspect-kw)
+
+(defmethod resolve-main-aspect :default [whatever]
+  (throw (IllegalArgumentException.
+           (str "Can't resolve " whatever " to an Aspect."))))
+
+(defn above-incl? [thing-tag thing-or-aspect]
+   (<= (safe-get-in def-for-aspect
+                    [(resolve-main-aspect thing-or-aspect) :ncoords])
+      (safe-get-in def-for-aspect [thing-tag :ncoords])))
+
+(defn below-incl? [thing-tag thing-or-aspect]
+  (>= (safe-get-in def-for-aspect
+                   [(resolve-main-aspect thing-or-aspect) :ncoords])
+      (safe-get-in def-for-aspect [thing-tag :ncoords])))
 
 
 ;;;; Functions for doing stuff with Things and Aspects
@@ -104,15 +158,21 @@
 
 ;;;; Functions for doing stuff with Things and Bars
 
+(defn has-bar? [bar-tag thing]
+  {:pre [(thing?+ thing)]}
+  (contains? (:bars thing) bar-tag))
+
+;p; TODO: Add better diagnostics to the other asserts. (RM 2015-08-08)
 (defn assert-bar-attachable [bar-type-def thing]
   (assert (things.def/bar-type?+ bar-type-def) "not a proper Bar definition")
-  (assert ((:aspect-prereqs-pred bar-type-def)
-           (:aspects thing))
-          "unfulfilled Aspect prerequisites according to Bar type")
+  (assert! ((:aspect-prereqs-pred bar-type-def)
+            (:aspects thing))
+           "unfulfilled Aspect prerequisites on %s according to Bar type def %s"
+           (pr-str thing) (pr-str bar-type-def))
   (assert ((:bar-prereqs-pred bar-type-def)
            (:bars thing))
           "unfulfilled Bar prerequisites according to Bar type")
-  (assert (not (contains? (:bars thing) (:name bar-type-def)))
+  (assert (not (has-bar? (:name bar-type-def) thing))
           (str "Bar of type " (:name bar-type-def) " already present")))
 
 (defn attach-bar [bar-type-defs bar-tag bar thing]
@@ -121,3 +181,18 @@
     (assert-bar-attachable bar-type-def thing)
     (things.def/assert-bar-valid bar-type-def bar)
     (assoc-in thing [:bars bar-tag] bar)))
+
+(defn attach-bars [bar-type-defs tags-and-bars thing]
+  (reduce (fn attach-bars-redfn [cur-thing [bar-tag bar]]
+            (attach-bar bar-type-defs bar-tag bar cur-thing))
+          thing
+          tags-and-bars))
+
+(defn detach-bar [bar-tag thing]
+  {:pre [(thing?+ thing) (has-bar? bar-tag thing)]}
+  (gr-utils/dissoc-in* thing [:bars bar-tag]))
+
+(defn replace-bar [bar-type-defs bar-tag bar thing]
+  (->> thing
+       (detach-bar bar-tag)
+       (attach-bar bar-type-defs bar-tag bar)))

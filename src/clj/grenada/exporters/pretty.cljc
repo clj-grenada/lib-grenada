@@ -1,6 +1,7 @@
 (ns grenada.exporters.pretty
   "Pretty-printing exporters. Uses fipp 0.6.2, therefore you can't use
-it in Clojure ≦ 1.6.0."
+  it in Clojure ≦ 1.6.0."
+  (:refer-clojure :exclude [pprint])
   (:require [clojure.java.io :as io]
             [fipp edn visit]
             [grenada.things :as t]))
@@ -12,6 +13,10 @@ it in Clojure ≦ 1.6.0."
 (defn print-ataggedval [edn-pr [t m]]
   (fipp.visit/visit-tagged edn-pr {:tag 'g/t
                                    :form [t m]}))
+
+(defn pprint [x]
+  (fipp.edn/pprint x {:symbols {::t/thing print-ataggedval}}))
+     ; In project.clj I meant this :symbols entry.
 
 ;; TODO: Always start a new line for the Bars map as well as existing Bars.
 ;;       Example:
@@ -39,5 +44,4 @@ it in Clojure ≦ 1.6.0."
                   " overwrite it."))))
   (with-open [w (io/writer out-file)]
     (binding [*out* w]
-      (fipp.edn/pprint data {:symbols {::t/thing print-ataggedval}}))))
-                             ; In project.clj I menat this :symbols entry.
+      (pprint data))))

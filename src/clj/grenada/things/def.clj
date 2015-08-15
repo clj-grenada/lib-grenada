@@ -2,7 +2,9 @@
   (:require [plumbing.core :as plumbing :refer [safe-get]]
             [guten-tag.core :as gt]
             [grenada.guten-tag.more :as gt-more]
-            [schema.core :as s]
+            [schema
+             [core :as s]
+             [macros :refer [assert!]]]
             [grenada.schemas :as schemas]))
 
 ;;;; Some auxiliary definitions concerning Aspects definitions
@@ -44,10 +46,21 @@
                   :valid-pred          (fn [_] true)
                   :schema              s/Any})
 
+(defn blank-bar-type-def
+  "Defines a Bar type with name BAR-TAG that imposes no restrictions at all.
+
+  Can be used to attach Bars whose actual definition is not available. Using is
+  a bit smelly and can only be deodorized by checking the Thing with the proper
+  Bar type definition later."
+  [bar-tag]
+  (map->bar-type {:name bar-tag}))
+
 (defn assert-bar-valid [bar-type bar]
   (assert (bar-type?+ bar-type) "improper Bar type definition")
   (s/validate (:schema bar-type) bar)
-  (assert ((:valid-pred bar-type) bar) "invalid Bar according to Bar type"))
+  (assert! ((:valid-pred bar-type) bar)
+           "invalid Bar %s according to Bar type %s"
+           bar bar-type))
 
 ;;;; Helper function for working with Aspects
 
