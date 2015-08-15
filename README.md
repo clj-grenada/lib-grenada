@@ -6,6 +6,8 @@ early stage of development and not supposed to be used by ordinary people.
 
 [documentation overview](doc/overview.md)
 
+Leiningen dependency: `[org.clj-grenada/lib-grenada "1.0.0-rc.1"]`
+
 
 ## Comments on documentation
 
