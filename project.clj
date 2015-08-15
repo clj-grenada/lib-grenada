@@ -12,14 +12,14 @@
                     ; Bump once Leiningen runs on Clojure 1.7.0.
                  [org.projectodd.shimdandy/shimdandy-api "1.1.0"]
                  [org.projectodd.shimdandy/shimdandy-impl "1.1.0"]
-                 [org.clj-grenada/darkestperu "0.2.0-SNAPSHOT"]
+                 [org.clj-grenada/darkestperu "1.0.0-rc.1"]
                  [com.cemerick/pomegranate "0.3.0"]
 
                  ;; For new versions of guten-tag, look if the print-method
                  ;; changed and potentially adjust
                  ;; grenada.core/print-ataggedval.
-                 [me.arrdem/guten-tag "0.1.4"]
-                 [org.clojure-grimoire/lib-grimoire "0.10.2"]
+                 [org.clojars.rmoehn/guten-tag "0.1.5"]
+                 [org.clojars.rmoehn/lib-grimoire "0.10.3"]
 
                  ;; WARNING: I'm using features of Fipp that are ‘subject to
                  ;;          change’ according to Fipp's README.
