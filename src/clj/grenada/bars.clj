@@ -17,7 +17,7 @@
                       important for humans anyway. (Correct me if I'm wrong.)
    - `:test`        – Doesn't occur in `clojure.core` and right now I don't know
                       how to handle it. Also not so important."
-  {:grenada.cmeta/bars {:doro.bars/markup-all :common-mark}}
+  {:grenada.cmeta/bars {:poomoo.bars/markup-all :common-mark}}
   (:require [clojure.set :as set]
             [grenada
              [aspects :as a]
