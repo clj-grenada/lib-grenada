@@ -38,7 +38,7 @@ the details, the doc strings will help.
     project.clj:
      - [lib-grenada](https://github.com/clj-grenada/lib-grenada/tree/master)
      - [poomoo](https://github.com/clj-grenada/poomoo/tree/master)
-     - [lib-grimoire](https://github.com/clojure-grimoire/lib-grimoire/tree/master)
+     - [lib-grimoire](https://github.com/rmoehn/lib-grimoire/tree/rmoehn-master)
  4. Change the Clojure version to 1.7.0.
  5. Start your favourite environment for evaluating Clojure code (probably some
     sort of REPL).
