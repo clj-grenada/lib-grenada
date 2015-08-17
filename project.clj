@@ -30,4 +30,10 @@
 
   :source-paths ["src/clj"]
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.10"]]
-                   :source-paths ["dev"]}})
+                   :source-paths ["dev"]}}
+
+  :codox {:sources ["src/clj"]
+          :output-dir "api-docs"
+          :src-dir-uri "https://github.com/clj-grenada/lib-grenada/blob/master/"
+          :homepage-uri "https://github.com/clj-grenada/lib-grenada/tree/master/"
+          :src-linenum-anchor-prefix "L"})
