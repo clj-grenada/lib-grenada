@@ -24,8 +24,7 @@
     - **versions** of different things
     - format of **Datadoc JARs** (not yet)
 
- - [API docs of lib-grenada](https://clj-grenada.github.io/lib-grenada) (yet to
-   be populated, but you can always look into the source code :-():
+ - [API docs of lib-grenada](https://clj-grenada.github.io/lib-grenada/api-docs/):
 
     - **reference material** for the functions and procedures you can use for
       dealing with Grenada data
