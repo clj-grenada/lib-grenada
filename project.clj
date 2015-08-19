@@ -12,7 +12,7 @@
                     ; Bump once Leiningen runs on Clojure 1.7.0.
                  [org.projectodd.shimdandy/shimdandy-api "1.1.0"]
                  [org.projectodd.shimdandy/shimdandy-impl "1.1.0"]
-                 [org.clj-grenada/darkestperu "1.0.0-rc.1"]
+                 [org.clj-grenada/darkestperu "1.0.0-rc.2"]
                  [com.cemerick/pomegranate "0.3.0"]
 
                  ;; For new versions of guten-tag, look if the print-method
