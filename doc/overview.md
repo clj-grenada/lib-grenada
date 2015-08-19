@@ -35,3 +35,12 @@
 
     - overview over the existing **Aspects** and **Bar types**
     - If you've defined an Aspect or Bar type, add it there.
+
+ - [‘Roadmap’](https://github.com/clj-grenada/grenada-spec/blob/devel/roadmap.md)
+
+    - goals and ideas for Grenada
+
+ - [contributing
+   guide](https://github.com/clj-grenada/grenada-spec/blob/devel/contributing.md)
+
+     - a few notes for when you want to get involved
