@@ -1,4 +1,4 @@
-(defproject org.clj-grenada/lib-grenada "1.0.0-rc.1"
+(defproject org.clj-grenada/lib-grenada "1.0.0-rc.2"
   :description "A library for processing Clojure metadata"
   :url "https://github.com/clj-grenada/lib-grenada"
   :license {:name "MIT License"
@@ -12,7 +12,7 @@
                     ; Bump once Leiningen runs on Clojure 1.7.0.
                  [org.projectodd.shimdandy/shimdandy-api "1.1.0"]
                  [org.projectodd.shimdandy/shimdandy-impl "1.1.0"]
-                 [org.clj-grenada/darkestperu "1.0.0-rc.1"]
+                 [org.clj-grenada/darkestperu "1.0.0-rc.2"]
                  [com.cemerick/pomegranate "0.3.0"]
 
                  ;; For new versions of guten-tag, look if the print-method
@@ -30,4 +30,10 @@
 
   :source-paths ["src/clj"]
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.10"]]
-                   :source-paths ["dev"]}})
+                   :source-paths ["dev"]}}
+
+  :codox {:sources ["src/clj"]
+          :output-dir "api-docs"
+          :src-dir-uri "https://github.com/clj-grenada/lib-grenada/blob/master/"
+          :homepage-uri "https://github.com/clj-grenada/lib-grenada/tree/master/"
+          :src-linenum-anchor-prefix "L"})

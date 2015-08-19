@@ -1,12 +1,16 @@
 # lib-grenada
 
-A Clojure library that helps you doing stuff according to the [Grenada
-spec](https://github.com/clj-grenada/grenada-spec). Currently this is in an
-early stage of development and not supposed to be used by ordinary people.
+Central library for Grenada and Datadoc JARs, which in turn have to do with
+Clojure documentation and metadata. See the [Grenada
+specification](https://github.com/clj-grenada/grenada-spec) for a list of
+features and other information.
 
-[documentation overview](doc/overview.md)
+ - [documentation overview](doc/overview.md)
 
-Leiningen dependency: `[org.clj-grenada/lib-grenada "1.0.0-rc.1"]`
+ - Leiningen dependency: `[org.clj-grenada/lib-grenada "1.0.0-rc.2"]`
+
+ - [API docs](https://clj-grenada.github.io/lib-grenada/api-docs/index.html)
+   (with backlink!)
 
 
 ## Comments on documentation
