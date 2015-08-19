@@ -2,7 +2,7 @@
   "Defines the core Aspects provided by Grenada.
 
   The main Aspects are not defined here, but in `grenada.things`, though."
-  {:grenada.cmeta/bars {:doro.bars/markup-all :common-mark}}
+  {:grenada.cmeta/bars {:poomoo.bars/markup-all :common-mark}}
   (:require [clojure.set :as set]
             [grenada
              [things :as t]]
