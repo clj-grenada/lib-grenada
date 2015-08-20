@@ -12,6 +12,7 @@
                     ; Bump once Leiningen runs on Clojure 1.7.0.
                  [org.projectodd.shimdandy/shimdandy-api "1.1.0"]
                  [org.projectodd.shimdandy/shimdandy-impl "1.1.0"]
+                    ; When bumping these, also change the entry in config.clj.
                  [org.clj-grenada/darkestperu "1.0.0-rc.2"]
                  [com.cemerick/pomegranate "0.3.0"]
 
