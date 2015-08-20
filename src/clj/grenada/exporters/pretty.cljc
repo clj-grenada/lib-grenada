@@ -10,11 +10,16 @@
 
 ;; TODO: Connect this to what is defined in guten-tag. – Currently we're just
 ;;       copying the 'g/t and when it changes, we have a problem.
-(defn print-ataggedval [edn-pr [t m]]
+(defn- print-ataggedval
+  "Procedure allowing Fipp to print guten-tag ATaggedVals."
+  [edn-pr [t m]]
   (fipp.visit/visit-tagged edn-pr {:tag 'g/t
                                    :form [t m]}))
 
-(defn pprint [x]
+(defn pprint
+  "Pretty-print a data structure, but specifically guten-tag ATaggedVals and
+  therewith Things."
+  [x]
   (fipp.edn/pprint x {:symbols {::t/thing print-ataggedval}}))
      ; In project.clj I meant this :symbols entry.
 
@@ -31,17 +36,23 @@
 ;;           …}}
 ;;
 ;;       (RM 2015-06-21)
+;; MAYBE TODO: Adapt this to the condition/restart pattern using Grey.
+;;             (RM 2015-08-20)
 (defn pprint-fs-flat
-  "
+  "Write DATA to OUT-FILE, pretty-printing it using Fipp.
+
+  If OVERWRITE is false and OUT-FILE exists, an exception will be thrown.
 
   Defaults to not overwriting, since something pprint-ed is likely to be edited
   as external metadata and the user would be very sad if she accidentally had
   her wonderful hand-crafted examples wiped out."
-  [data out-file & [?overwrite]]
-  (when (and (not ?overwrite) (.exists (io/as-file out-file)))
-    (throw (IllegalStateException.
-             (str out-file " already exists. You might not want me to"
-                  " overwrite it."))))
-  (with-open [w (io/writer out-file)]
-    (binding [*out* w]
-      (pprint data))))
+  ([data out-file]
+   (pprint-fs-flat data out-file false))
+  ([data out-file overwrite]
+   (when (and (not overwrite) (.exists (io/as-file out-file)))
+     (throw (IllegalStateException.
+              (str out-file " already exists. You might not want me to"
+                   " overwrite it."))))
+   (with-open [w (io/writer out-file)]
+     (binding [*out* w]
+       (pprint data)))))
