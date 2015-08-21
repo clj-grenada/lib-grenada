@@ -1,4 +1,5 @@
 (ns grenada.transformers
+  "Functions for transforming single Things or collections of Things."
   (:require [clojure.set :as set]
             [medley.core :as medley]
             [plumbing
@@ -17,10 +18,14 @@
 
 ;;;; Universal helpers
 
-(defn- rvector [& args]
+(defn- rvector
+  "Like vector, but reverses the order of its arguments."
+  [& args]
   (vec (reverse args)))
 
 (defn- select-all-keys
+  "Like clj::clojure.core/select-keys, but returns DEFAULT (default: nil) if not
+  all keys in KS are present in M."
   ([m ks]
    (select-all-keys m ks nil))
   ([m ks default]
@@ -29,7 +34,9 @@
        sub-map
        default))))
 
-(defn- map-some [f & colls]
+(defn- map-some
+  "Like clj::clojure.core/map, but removes nils from the result."
+  [f & colls]
   (filter some?
           (apply map f colls)))
 
@@ -52,7 +59,10 @@
 
 ;;;; Transformer transformers
 
-(defn apply-if [p f]
+(defn apply-if
+  "Returns a transformer that applies transformer F to a value if it fulfills P
+  and otherwise returns unchanged."
+  [p f]
   (fn apply-if-infn [x]
     (if (p x)
       (f x)
@@ -61,7 +71,9 @@
 
 ;;;; Transformers for single maps
 
-(defn strip-all [tm]
+(defn strip-all
+  "Removes all Bars from TM."
+  [tm]
   (assoc tm :bars {}))
 
 ;; Note: You might be wondering about the extra check in the
@@ -112,7 +124,10 @@
 
 ;;; Conditions and handlers for specify-cmeta-any. See also grey.core.
 
-(defn- apply-bar-transformer [[any-keys bar-transformer] tm any-bar]
+(defn- apply-bar-transformer
+  "Applies the BAR-TRANSFORMER from bar-transformer-for for to TM and ANY-BAR if
+  ANY-BAR contains at least one of ANY-KEYs. Returns nil otherwise."
+  [[any-keys bar-transformer] tm any-bar]
   (if (seq (set/intersection any-keys (gr-utils/keyset any-bar)))
     (bar-transformer tm any-bar)))
 
@@ -175,20 +190,3 @@
             (t/attach-bars all-def-for-bar-type new-bars)
             (t/attach-bars all-def-for-bar-type cmeta-bars)))
      tm)))
-
-
-;;;; Transformers for whole collections
-
-;; This could be a good one for programming golf, I guess.
-(defn- sensible-key-order [k1 k2]
-  (let [order [:coords :aspects :bars]
-        index-for (into {} (map-indexed rvector order))
-        higher (count order)]
-    (compare (get index-for k1 higher)
-             (get index-for k2 higher))))
-
-;; With an external library, we could use an ordered map, to the same end.
-(defn- sort-keys [[t m :as tm]]
-  {:pre [(gt/tagged? tm)]}
-  (gt/->ATaggedVal t
-                   (into (sorted-map-by sensible-key-order) m)))

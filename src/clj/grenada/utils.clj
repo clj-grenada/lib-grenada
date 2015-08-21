@@ -6,7 +6,9 @@
 
 ;;;; Not categorized
 
-(defn warn [& args]
+(defn warn
+  "Like clj::clojure.core/println, but outputs to *err*."
+  [& args]
   (binding [*out* *err*] (apply println "WARNING! "args)))
 
 
@@ -72,10 +74,7 @@
   [n coll]
   (concat (take n coll) (drop (inc n) coll)))
 
-(defn safe-select-keys
-  "Analogy: get:safe-get :: select-keys:safe-select-keys"
-  [m ks]
-  (plumbing.core/map-from-keys #(safe-get m %) ks))
-
-(defn keyset [m]
+(defn keyset
+  "Set of the keys of M."
+  [m]
   (set (keys m)))
