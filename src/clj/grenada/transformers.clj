@@ -175,20 +175,3 @@
             (t/attach-bars all-def-for-bar-type new-bars)
             (t/attach-bars all-def-for-bar-type cmeta-bars)))
      tm)))
-
-
-;;;; Transformers for whole collections
-
-;; This could be a good one for programming golf, I guess.
-(defn- sensible-key-order [k1 k2]
-  (let [order [:coords :aspects :bars]
-        index-for (into {} (map-indexed rvector order))
-        higher (count order)]
-    (compare (get index-for k1 higher)
-             (get index-for k2 higher))))
-
-;; With an external library, we could use an ordered map, to the same end.
-(defn- sort-keys [[t m :as tm]]
-  {:pre [(gt/tagged? tm)]}
-  (gt/->ATaggedVal t
-                   (into (sorted-map-by sensible-key-order) m)))
