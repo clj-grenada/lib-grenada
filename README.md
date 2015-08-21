@@ -7,7 +7,7 @@ features and other information.
 
  - [documentation overview](doc/overview.md)
 
- - Leiningen dependency: `[org.clj-grenada/lib-grenada "1.0.0-rc.3"]`
+ - Leiningen dependency: `[org.clj-grenada/lib-grenada "1.0.0-rc.4"]`
 
  - [API docs](https://clj-grenada.github.io/lib-grenada/api-docs/index.html)
    (with backlink!)
