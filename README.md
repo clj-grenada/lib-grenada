@@ -49,6 +49,9 @@ features and other information.
  - MAYBE: A higher-order annotation indicating that some thought should be put
    into whether (and how) to carry out the respective action.
 
+ - Between comment annotation and colon may be written the version from which
+   the item should be cleared.
+
 ### Rationale
 
 I don't like to puzzle over why people programmed or changed things the way they
