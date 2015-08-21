@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0-rc.4
+
+ - Just a bugfix. Hope you didn't try to use 1.0.0-rc.3.
+
 ## 1.0.0-rc.3
 
  - [BREAKING] Remove `grenada.utils/safe-select-keys`.
