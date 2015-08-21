@@ -3,6 +3,8 @@
 ## 1.0.0-rc.3
 
  - [BREAKING] Remove `grenada.utils/safe-select-keys`.
+ - Add lots of doc strings and some schemas for arguments and return values.
+ - Add optional arguments to grenada.reading/read-string.
 
 ## 1.0.0-rc.2
 
