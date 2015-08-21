@@ -45,7 +45,10 @@
 
   Defaults to not overwriting, since something pprint-ed is likely to be edited
   as external metadata and the user would be very sad if she accidentally had
-  her wonderful hand-crafted examples wiped out."
+  her wonderful hand-crafted examples wiped out.
+
+  See clj::grenada.exporters/fs-flat for a non-pretty-printing exporter that
+  works in Clojure versions before 1.7.0."
   ([data out-file]
    (pprint-fs-flat data out-file false))
   ([data out-file overwrite]
