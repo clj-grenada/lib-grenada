@@ -4,21 +4,25 @@
             [darkestperu.jar :as jar]
             [grenada
              [config :refer [config]]
+             [schemas :as schemas]
              [utils :as gr-utils]]
             [grenada.utils.jar :as gr-jar]
-            [plumbing.core :refer [safe-get]]))
+            [plumbing.core :refer [safe-get]]
+            [schema.core :as s]))
 
 ;; TODO: Correct problems with relative paths. .getParentFile only works with
 ;;       files that have more than one segment. However, when I converted to an
 ;;       absolute filename, .relativizePath complained that "other" was a
 ;;       different type of path. (RM 2015-06-24)
-;; TODO: Document the feature that one can pass additional entries for the POM
-;;       file in coords-out. – Refer to exporters/jar. (RM 2015-08-07)
-(defn jar-from-files
+(s/defn ^:always-validate jar-from-files
   "Takes the Grenada data from IN-DIR and packages them up in a JAR. Also
   creates a pom.xml with Maven coordinates from COORDS-OUT. Writes JAR and
-  pom.xml to OUT-DIR."
-  [in-dir out-dir {:keys [group artifact version] :as coords-out}]
+  pom.xml to OUT-DIR.
+
+  Note that IN-DIR has to be a path with more than one segment. You can't use
+  'a-dir', but './a-dir' should work."
+  [in-dir out-dir {:keys [group artifact version] :as coords-out}
+   :- schemas/JarCoordsWithDescr]
   (let [in-dir-file (io/as-file in-dir)
         in-dir-parent (.getParentFile in-dir-file)
         files (gr-utils/ordinary-file-seq in-dir-file)
@@ -28,9 +32,16 @@
                                 files))]
     (gr-jar/jar-from-entries-map files-map out-dir coords-out)))
 
-;; REVIEW: Should we throw this out? (RM 2015-08-02)
-(defn deploy-jar [{:keys [artifact group version] :as coords} out-dir
-                  [u p]]
+(s/defn ^:always-validate deploy-jar
+  "Deploys a JAR file and a pom.xml found in OUT-DIR to Clojars.
+
+  This procedure will deploy the JAR file whose file name matches COORDS.
+  OUT-DIR can only contain one file called pom.xml and this one will be
+  deployed. U and P have to be username and password for Clojars.
+
+  The :description entry in COORDS will be ignored."
+  [{:keys [artifact group version] :as coords} :- schemas/JarCoordsWithDescr
+   out-dir [u p]]
   (aether/deploy
     :coordinates [(symbol group artifact)
                   version
