@@ -136,6 +136,15 @@
 
 ;;;; Functions for doing stuff with Things and Aspects
 
+;; MAYBE TODO: Add has-aspect?+, which also checks if the predicates defined by
+;;             the Aspect's are fulfilled (or similar). (RM 2015-07-26)
+(defn has-aspect?
+  "Returns true if THING has an Aspect with the name ASPECT-TAG, false
+  otherwise."
+  [aspect-tag thing]
+  {:pre [(thing?+ thing)]}
+  (contains? (:aspects thing) aspect-tag))
+
 ;; MAYBE TODO: (Here and in the following.) Improve the diagnostic messages.
 ;;             Include references to places in the spec. (RM 2015-07-24)
 ;; TODO: Use schemas.macros/assert! for the asserts. (RM 2015-08-21)
@@ -184,19 +193,16 @@
           thing
           aspect-tags))
 
-;; MAYBE TODO: Add has-aspect?+, which also checks if the predicates defined by
-;;             the Aspect's are fulfilled (or similar). (RM 2015-07-26)
-(defn has-aspect?
-  "Returns true if THING has an Aspect with the name ASPECT-TAG, false
-  otherwise."
-  [aspect-tag thing]
-  {:pre [(thing?+ thing)]}
-  (contains? (:aspects thing) aspect-tag))
-
 
 ;;;; Functions for doing stuff with Things and Bars
 
-;p; TODO: Add better diagnostics to the other asserts. (RM 2015-08-08)
+(defn has-bar?
+  "Returns true if THING has a Bar of the Bar type with name BAR-TAG."
+  [bar-tag thing]
+  {:pre [(thing?+ thing)]}
+  (contains? (:bars thing) bar-tag))
+
+;; TODO: Add better diagnostics to the other asserts. (RM 2015-08-08)
 (defn assert-bar-attachable
   "Throws an exception if THING isn't fit for attaching a Bar of the type
   defined by BAR-TYPE-DEF to it."
@@ -233,12 +239,6 @@
             (attach-bar bar-type-defs bar-tag bar cur-thing))
           thing
           tags-and-bars))
-
-(defn has-bar?
-  "Returns true if THING has a Bar of the Bar type with name BAR-TAG."
-  [bar-tag thing]
-  {:pre [(thing?+ thing)]}
-  (contains? (:bars thing) bar-tag))
 
 (defn detach-bar
   "Removes the Bar of type with name BAR-TAG from THING."
