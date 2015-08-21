@@ -7,7 +7,7 @@ features and other information.
 
  - [documentation overview](doc/overview.md)
 
- - Leiningen dependency: `[org.clj-grenada/lib-grenada "1.0.0-rc.2"]`
+ - Leiningen dependency: `[org.clj-grenada/lib-grenada "1.0.0-rc.3"]`
 
  - [API docs](https://clj-grenada.github.io/lib-grenada/api-docs/index.html)
    (with backlink!)
@@ -48,6 +48,9 @@ features and other information.
 
  - MAYBE: A higher-order annotation indicating that some thought should be put
    into whether (and how) to carry out the respective action.
+
+ - Between comment annotation and colon may be written the version from which
+   the item should be cleared.
 
 ### Rationale
 
