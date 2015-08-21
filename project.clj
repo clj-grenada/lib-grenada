@@ -1,4 +1,4 @@
-(defproject org.clj-grenada/lib-grenada "1.0.0-rc.3"
+(defproject org.clj-grenada/lib-grenada "1.0.0-rc.4"
   :description "A library for processing Clojure metadata"
   :url "https://github.com/clj-grenada/lib-grenada"
   :license {:name "MIT License"
