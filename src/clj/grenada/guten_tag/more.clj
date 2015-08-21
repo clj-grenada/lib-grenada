@@ -109,10 +109,10 @@
                         :voyt.bars/defines ["${NAME-SYM}+?"
                                             "map->${NAME-SYM}"
                                             'guten-tag.core/deftag]}}
-  ([name-sym fields schema]
-   `(deftag+ ~name-sym ~fields ~schema {}))
-  ([name-sym fields schema defaults]
+  ([name-sym doc-string fields schema]
+   `(deftag+ ~name-sym ~doc-string ~fields ~schema {}))
+  ([name-sym doc-string fields schema defaults]
    `(do
-      (gt/deftag ~name-sym ~fields)
+      (gt/deftag ~name-sym ~doc-string ~fields)
       ~(t+?-form name-sym schema)
       ~(map->t-form name-sym (str (ns-name *ns*)) schema defaults))))
