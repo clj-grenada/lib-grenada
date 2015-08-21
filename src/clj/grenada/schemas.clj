@@ -1,4 +1,5 @@
 (ns grenada.schemas
+  "Schemas that are used in more than one place in Grenada."
   (:require [schema.core :as s]))
 
 (defn- ns-qualified? [kw-or-sym]
@@ -26,3 +27,16 @@
           "Is a valid Prismatic Schema."))
 
 (def Vector (s/pred vector? "a vector"))
+
+(s/defschema JarCoords
+  ":group, :artifact and :version correspond to the Maven coordinates groupId,
+  artifactId and version."
+  {:group s/Str
+   :artifact s/Str
+   :version s/Str})
+
+;; See grenada.utils.jar/jar-from-entries-map for a todo item.
+(s/defschema JarCoordsWithDescr
+  ":description will end up in pom.xml as <description>…</description>."
+  (assoc JarCoords
+         (s/optional-key :description) s/Str))
