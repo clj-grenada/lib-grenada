@@ -2,12 +2,16 @@
   "An experiment at implementing something like Common Lisp's condition/restart
   system (see
   http://www.gigamonkeys.com/book/beyond-exception-handling-conditions-and-restarts.html)
-  with Dire and Slingshot."
+  with Dire and Slingshot. Don't use it. There is Hara Event."
+  {:grenada.cmeta/bars {:grenada.bars/lifespan {:added "1.0.0"
+                                                :deprecated "1.1.0"}}}
   (:require [dire.core :as dire]
             [plumbing.core :refer [safe-get-in]]))
 
 ;;; Note: Sorry for putting this with lib-grenada, but it's really too small to
 ;;;       be its own library right now.
+
+;;; TODO: Convert to this: http://docs.caudate.me/hara/hara-event.html.
 
 ;;; TODO: Make it keep up with the spirit of Grenada by somehow making the
 ;;;       available handlers and their descriptions end up as Bars. (RM
