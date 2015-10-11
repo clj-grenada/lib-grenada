@@ -6,7 +6,7 @@
     - for **library authors** who only want a Datadoc JAR published
     - some commentary on Datadoc JARs and **Clojars**
 
- - [The case of Dorothy the Documenter](doc/tutorial.md):
+ - [The case of Dorothy the Documenter](tutorial.md):
 
     - tutorial on working with **lib-grenada**
     - obtaining Datadoc JARs
